@@ -18,7 +18,7 @@ model User {
   id         String  @id @default(uuid())
   fullName   String
   email      String  @unique
-  password   String  
+  password   String?  
   provider   String  // google , github, local
   created_at DateTime @default(now())
   updated_at DateTime @default(now())

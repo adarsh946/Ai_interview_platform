@@ -28,3 +28,13 @@ export const signinSchema = z.object({
       "Password must contain at least one special character"
     ),
 });
+
+export const createJobSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  skills: z.string().array(),
+  ctc: z.number(),
+  location: z.string(),
+  expiry: z.date(),
+  active: z.boolean(),
+});

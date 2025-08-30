@@ -23,3 +23,16 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
 }
+
+model Job {
+  id           String  @id @default(uuid())
+  title        String
+  description  String
+  skills       String[]
+  ctc          Int
+  location     String
+  active       Boolean
+  expiry       DateTime
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now())
+}

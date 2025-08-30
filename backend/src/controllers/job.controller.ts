@@ -36,3 +36,52 @@ export const jobCreation = async (req: any, res: any) => {
     });
   }
 };
+
+export const getalljobs = async (req: any, res: any) => {
+  try {
+    const alljobs = await prisma.job.findMany({
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+
+    if (!alljobs) {
+      return res.status(401).json({
+        message: "There is no job posting.",
+      });
+    }
+
+    res.status(201).json({
+      alljobs,
+    });
+  } catch (error) {
+    return res.status(401).json({
+      message: "There is no job posting.",
+    });
+  }
+};
+
+export const getJob = async (req: any, res: any) => {
+  const { id } = req.params;
+
+  try {
+    const job = await prisma.job.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!job) {
+      return res.status(401).json({
+        message: "Job not found!",
+      });
+    }
+    return res.status(201).json({
+      job,
+    });
+  } catch (error) {
+    return res.status(401).json({
+      message: "Job not found!",
+    });
+  }
+};

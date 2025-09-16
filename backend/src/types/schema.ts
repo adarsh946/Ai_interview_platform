@@ -1,8 +1,8 @@
-import z from "zod";
+import z, { string } from "zod";
 
 export const signupSchema = z.object({
   fullName: z.string().trim(),
-  email: z.string().email("Invalid email address"),
+  email: z.email("Invalid email address"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters long")
@@ -16,7 +16,7 @@ export const signupSchema = z.object({
 });
 
 export const signinSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email("Invalid email address"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters long")
@@ -37,4 +37,13 @@ export const createJobSchema = z.object({
   location: z.string(),
   expiry: z.date(),
   active: z.boolean(),
+});
+
+export const createMockSchema = z.object({
+  role: z.string("Required field"),
+  difficulty: z.string(),
+  duration: z.number(),
+  round: z.string(),
+  skills: z.array(string()),
+  resume: z.url(),
 });

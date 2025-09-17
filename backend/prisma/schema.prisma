@@ -47,6 +47,46 @@ model MockInterview{
   skills         String[]
   resume         String?
   user           User  @relation(fields: [userId], references: [id])
-  userId         String
+  userId         String   @unique
+
+  session        Session?
 }
 
+model Session {
+  id              String @id @default(uuid())
+  mockInterviewId String @unique
+  mockInterview   MockInterview @relation(fields: [mockInterviewId], references: [id])
+
+  status          SessionStatus @default(PENDING)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+
+  cameraTestPassed Boolean  // true/false / null
+  micTestPassed    Boolean  // true/false / null
+
+  result           Result?
+}
+
+enum SessionStatus{
+  PENDING              // NOT CHECKED
+  MIC_CHECK            // CHECKING MIC
+  CAMERA_CHECK         // CHECKING CAMERA
+  READY
+  IN_PROGRESS          // INTERVIEW STARTED
+  COMPLETED            // COMPLETED INTERVIEW
+  FAILED               // FAILED 
+}
+
+model Result{
+  id                String @id @default(uuid())
+  transcript        String
+ 
+  scores     Json?    // e.g. { "confidence": 0.85, "clarity": 0.9 }
+  expressions Json?   // e.g. { "smile": 0.7, "neutral": 0.2 }
+  feedback   String?  // AI-generated feedback
+  screenshots Json?   // array of S3 URLs if stored
+  createdAt  DateTime @default(now())   
+  
+  sessionId   String    @unique
+  session     Session @relation(fields: [sessionId], references: [id])   
+}

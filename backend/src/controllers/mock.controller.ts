@@ -17,7 +17,23 @@ export const createMockInterview = async (req: any, res: any) => {
         duration: schema.data.duration,
         skills: schema.data.skills,
         difficulty: schema.data.difficulty,
+        resume: schema.data.resume,
+        userId: req.userId,
       },
     });
-  } catch (error) {}
+
+    if (!mock) {
+    }
+
+    //   Ai logic for generating questions on the basic of mock and resume....
+
+    return res.status(201).json({
+      message: "mock created successfully!",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Problem in creating mock",
+    });
+  }
 };

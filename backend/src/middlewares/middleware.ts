@@ -26,7 +26,7 @@ const useMiddleware = (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    req.userId = decoded.userId;
+    req.user = { id: decoded.userId };
     next();
   } catch (error) {
     return res.status(401).json({

@@ -23,6 +23,7 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
   mockInterview MockInterview[]
+  session        Session?
 }
 
 model Job {
@@ -47,7 +48,7 @@ model MockInterview{
   skills         String[]
   resume         String?
   user           User  @relation(fields: [userId], references: [id])
-  userId         String   @unique
+  userId         String   
 
   session        Session?
 }
@@ -57,12 +58,15 @@ model Session {
   mockInterviewId String @unique
   mockInterview   MockInterview @relation(fields: [mockInterviewId], references: [id])
 
+  user           User  @relation(fields: [userId], references: [id])
+  userId         String  @unique
+
   status          SessionStatus @default(PENDING)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @default(now())
 
-  cameraTestPassed Boolean  // true/false / null
-  micTestPassed    Boolean  // true/false / null
+  cameraTestPassed Boolean @default(false) // true/false / null
+  micTestPassed    Boolean @default(false) // true/false / null
 
   result           Result?
 }
@@ -74,7 +78,8 @@ enum SessionStatus{
   READY
   IN_PROGRESS          // INTERVIEW STARTED
   COMPLETED            // COMPLETED INTERVIEW
-  FAILED               // FAILED 
+  FAILED               // FAILED
+  CANCELLED 
 }
 
 model Result{

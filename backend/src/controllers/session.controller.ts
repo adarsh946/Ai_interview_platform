@@ -141,3 +141,115 @@ export const inProgressInterview = async (req: any, res: any) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const cancelInterview = async (req: any, res: any) => {
+  const { sessionId, cancelReason } = req.body;
+
+  if (!sessionId) {
+    return res.status(401).json({
+      message: "Invalid Session",
+    });
+  }
+
+  try {
+    const session = await prisma.session.findUnique({
+      where: {
+        id: sessionId,
+      },
+    });
+
+    if (!session) {
+      return res.status(401).json({
+        message: "session is not found!",
+      });
+    }
+
+    if (session.status != "IN_PROGRESS") {
+      return res.status(401).json({
+        message: "Bad Request",
+      });
+    }
+
+    const updateSession = await prisma.session.update({
+      where: {
+        id: session.id,
+      },
+      data: {
+        status: "CANCELLED",
+        cancelledAt: new Date(),
+        cancelReason: cancelReason,
+      },
+    });
+
+    if (!updateSession) {
+      return res.status(401).json({
+        message: "cancelation failed!",
+      });
+    }
+
+    return res.status(201).json({
+      message: "Interview canceled !!",
+      sessionId: updateSession.id,
+      status: updateSession.status,
+      canceledAt: updateSession.cancelledAt,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const completeInterview = async (req: any, res: any) => {
+  const { sessionId } = req.body;
+  if (!sessionId) {
+    return res.status(401).json({
+      message: "Invalid Session ",
+    });
+  }
+
+  try {
+    const session = await prisma.session.findUnique({
+      where: {
+        id: sessionId,
+      },
+    });
+
+    if (!session) {
+      return res.status(401).json({
+        message: "session is not found!",
+      });
+    }
+
+    if (session.status != "IN_PROGRESS") {
+      return res.status(401).json({
+        message: "Bad Request",
+      });
+    }
+
+    const updateSession = await prisma.session.update({
+      where: {
+        id: session.id,
+      },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+      },
+    });
+
+    if (!updateSession) {
+      return res.status(401).json({
+        message: "Completion failed!",
+      });
+    }
+
+    return res.status(201).json({
+      message: "Interview Completed Successfully!!",
+      sessionId: updateSession.id,
+      status: updateSession.status,
+      completedAt: updateSession.completedAt,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

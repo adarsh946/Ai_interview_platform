@@ -1,6 +1,6 @@
 import prisma from "../prisma/prisma.js";
 
-export const startInterview = async (req: any, res: any) => {
+export const startSession = async (req: any, res: any) => {
   const { mockInterviewId } = req.body;
   if (!mockInterviewId) {
     return res.status(401).json({
@@ -226,6 +226,11 @@ export const completeInterview = async (req: any, res: any) => {
       });
     }
 
+    if (session.userId != req.user) {
+      return res.status(403).json({
+        message: "Forbidden",
+      });
+    }
     const updateSession = await prisma.session.update({
       where: {
         id: session.id,

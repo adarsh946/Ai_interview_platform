@@ -40,6 +40,7 @@ export async function questionGeneratorNode(
 
   return {
     currentQuestion,
+    lastQuestionType: followUpNeeded ? "followup" : "new",
     questionCount: followUpNeeded ? questionCount : questionCount + 1,
   };
 }

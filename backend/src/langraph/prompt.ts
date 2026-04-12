@@ -74,3 +74,67 @@ No preamble. No explanation. No "Sure, here's a question:".
 Just the raw question text, nothing else.
 `.trim();
 }
+
+// ─── Evaluator Prompt ─────────────────────────────────────────────────────────
+
+export function buildEvaluatorPrompt(state: InterviewStateType): string {
+  const { role, difficulty, round, skills, currentQuestion, currentAnswer } =
+    state;
+
+  return `
+You are a strict but fair interview evaluator.
+You are evaluating a candidate interviewing for the role of ${role}.
+Round type: ${round}
+Difficulty level: ${difficulty}
+ 
+Calibrate your scoring to the difficulty level — the same answer should score
+higher for a junior role and lower for a senior role. A vague but directionally
+correct answer might earn a 7 at junior level but only a 4 at senior level.
+ 
+───────────────────────────────────────────
+EVALUATION INPUT
+───────────────────────────────────────────
+Question asked:
+${currentQuestion}
+ 
+Candidate's answer:
+${currentAnswer}
+ 
+Skills being evaluated: ${skills.join(", ")}
+ 
+───────────────────────────────────────────
+WHAT TO EVALUATE
+───────────────────────────────────────────
+Completeness — did the candidate fully answer the question or leave parts unaddressed?
+Relevance    — was the answer relevant to the role and the skills being evaluated?
+Depth        — did they go deep enough for a ${difficulty} level candidate?
+Clarity      — was the answer clear, structured, and easy to follow?
+ 
+───────────────────────────────────────────
+FOLLOW-UP DECISION
+───────────────────────────────────────────
+Set "followUpNeeded" to true if ANY of the following apply:
+  - The answer was vague or incomplete
+  - The answer missed a critical concept expected at ${difficulty} level
+  - The answer would benefit from deeper probing to fairly assess the candidate
+ 
+Set "followUpNeeded" to false if:
+  - The answer was complete and satisfactory for ${difficulty} level
+  - The topic is sufficiently covered and a new question would be more valuable
+ 
+───────────────────────────────────────────
+OUTPUT INSTRUCTION
+───────────────────────────────────────────
+Respond in strict JSON format. No preamble. No explanation. No markdown code fences.
+Just the raw JSON object, nothing else.
+ 
+{
+  "score": <number between 0 and 10>,
+  "feedback": "<brief overall feedback on the answer>",
+  "strength": "<what was good about the answer>",
+  "weakness": "<what was missing or weak>",
+  "followUpNeeded": <true | false>,
+  "followUpContext": "<if followUpNeeded is true, explain what to probe deeper — empty string if false>"
+}
+`.trim();
+}

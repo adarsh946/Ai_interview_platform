@@ -47,3 +47,20 @@ export const createMockSchema = z.object({
   skills: z.array(string()),
   resume: z.url(),
 });
+
+export const EvaluationSchema = z.object({
+  score: z
+    .number()
+    .min(0)
+    .max(10)
+    .describe("Score between 0 and 10 calibrated to difficulty level"),
+  feedback: z.string().describe("Brief overall feedback on the answer"),
+  strength: z.string().describe("What was good about the answer"),
+  weakness: z.string().describe("What was missing or weak"),
+  followUpNeeded: z
+    .boolean()
+    .describe("Whether a follow-up question is needed"),
+  followUpContext: z
+    .string()
+    .describe("What to probe deeper — empty string if followUpNeeded is false"),
+});

@@ -64,3 +64,10 @@ export const EvaluationSchema = z.object({
     .string()
     .describe("What to probe deeper — empty string if followUpNeeded is false"),
 });
+
+export const ResultSchema = z.object({
+  overallScore: z.number().min(0).max(10),
+  overallFeedback: z.string(),
+  strengths: z.array(z.string()),
+  improvements: z.array(z.string()),
+});

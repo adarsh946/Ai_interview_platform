@@ -5,6 +5,8 @@ import jobRoute from "./routes/job.routes.js";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import { redis } from "./config/redis.js";
+import { createServer } from "http";
+import { initializeSocket } from "./socket/index.js";
 
 dotenv.config();
 
@@ -25,6 +27,11 @@ app.use(passport.initialize());
 app.use("/api/v1", authRoute);
 app.use("/api/v1/jobs", jobRoute);
 
-app.listen(process.env.PORT || 3000, () => {
+// socket.io connection...
+
+const httpServer = createServer(app);
+initializeSocket(httpServer);
+
+httpServer.listen(process.env.PORT || 3000, () => {
   console.log(`🚀 Server running on port ${process.env.PORT}`);
 });

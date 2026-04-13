@@ -4,8 +4,17 @@ import authRoute from "./routes/auth.route.js";
 import jobRoute from "./routes/job.routes.js";
 import cookieParser from "cookie-parser";
 import passport from "passport";
+import { redis } from "./config/redis.js";
 
 dotenv.config();
+
+await redis.connect();
+
+await redis.set("ping", "pong");
+const val = await redis.get("ping");
+console.log("[redis] test:", val);
+
+const { interviewGraph } = await import("./langraph/interviewGraph.js");
 
 const app = express();
 app.use(express.json());

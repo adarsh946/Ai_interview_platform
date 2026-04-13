@@ -1,6 +1,8 @@
-import { RedisOptions } from "ioredis";
+import { createClient } from "redis";
 
-export const redisConnection: RedisOptions = {
-  host: process.env.REDIS_HOST || "localhost",
-  port: Number(process.env.REDIS_PORT) || 6379,
-};
+export const redis = createClient({
+  url: process.env.UPSTASH_REDIS_URL,
+});
+
+redis.on("connect", () => console.log("[redis] connected to Upstash"));
+redis.on("error", (err) => console.error("[redis] error:", err.message));

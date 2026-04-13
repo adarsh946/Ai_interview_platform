@@ -20,7 +20,7 @@ const append = <T>(current: T[], update: T[]): T[] => [...current, ...update];
 
 export type InterviewStatus = "in-progress" | "completing" | "done";
 
-const InterviewState = Annotation.Root({
+export const InterviewState = Annotation.Root({
   // interview state  set once never change....
 
   sessionId: Annotation<string>({

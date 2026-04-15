@@ -90,9 +90,11 @@ model Result{
   id                String @id @default(uuid())
   transcript        String
  
-  scores     Json?    // e.g. { "confidence": 0.85, "clarity": 0.9 }
+  overallScore     Int    // e.g. { "confidence": 0.85, "clarity": 0.9 }
   expressions Json?   // e.g. { "smile": 0.7, "neutral": 0.2 }
-  feedback   String?  // AI-generated feedback
+  overallFeedback   String?  // AI-generated feedback
+  strengths         String[]
+  improvements      String[]
   screenshots Json?   // array of S3 URLs if stored
   createdAt  DateTime @default(now())   
   

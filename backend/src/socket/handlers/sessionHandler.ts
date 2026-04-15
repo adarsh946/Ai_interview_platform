@@ -1,6 +1,8 @@
 import { Server, Socket } from "socket.io";
 import prisma from "../../prisma/prisma.js";
 import { interviewGraph } from "../../langraph/interviewGraph.js";
+import { Command } from "@langchain/langgraph";
+import { redis } from "../../config/redis.js";
 
 interface JoinPayload {
   sessionId: string;
@@ -24,6 +26,15 @@ interface AnswerPayload {
 interface CancelPayload {
   sessionId: string;
   reason?: string;
+}
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+async function cleanupSession(sessionId: string): Promise<void> {
+  await redis.del(`interview:expressions:${sessionId}`);
+  console.log(
+    `[sessionHandler] cleaned up Redis keys for session=${sessionId}`
+  );
 }
 
 export function sessionHandler(io: Server, socket: Socket): void {
@@ -111,6 +122,7 @@ export function sessionHandler(io: Server, socket: Socket): void {
         lastAnswerFeedback: "",
         lastAnswerStrength: "",
         lastAnswerWeakness: "",
+        lastQuestionType: "new" as const,
         overallScore: 0,
         overallFeedback: "",
         strengths: [],
@@ -164,6 +176,118 @@ export function sessionHandler(io: Server, socket: Socket): void {
           data: { status: "FAILED" },
         })
         .catch(() => {}); // don't throw if DB update fails
+    }
+  });
+
+  // Event 3 Answer submit
+
+  socket.on("answer:submit", async (payload: AnswerPayload) => {
+    const { sessionId, answer } = payload;
+
+    if (!sessionId || !answer) {
+      socket.emit("interview:error", {
+        message: "sessionId and answer are required",
+      });
+      return;
+    }
+
+    try {
+      console.log(`[sessionHandler] answer received session=${sessionId}`);
+
+      io.to(sessionId).emit("interview:status", { status: "processing" });
+
+      await interviewGraph.invoke(new Command({ resume: answer }), {
+        configurable: { thread_id: sessionId },
+      });
+
+      const graphState = await interviewGraph.getState({
+        configurable: { thread_id: sessionId },
+      });
+
+      const status = graphState.values.status as string;
+
+      if (status === "done") {
+        console.log(`[sessionHandler] interview complete session=${sessionId}`);
+
+        const rawExpression = await redis.get(
+          `interview:expressions:${sessionId}`
+        );
+        const expressions = rawExpression ? JSON.parse(rawExpression) : [];
+
+        const result = {
+          overallScore: graphState.values.overallScore as number,
+          overallFeedback: graphState.values.overallFeedback as string,
+          strengths: graphState.values.strengths as string[],
+          improvements: graphState.values.improvements as string[],
+          transcript: graphState.values.transcript,
+          expressions,
+        };
+
+        await prisma.result.create({
+          data: {
+            sessionId,
+            transcript: JSON.stringify(transcript),
+            overallScore: Math.round(overallScore),
+            overallFeedback,
+            strengths,
+            improvements,
+            expressions: expressionsFromRedis,
+            screenshots: null,
+          },
+        });
+        await prisma.session.update({
+          where: { id: sessionId },
+          data: { status: "COMPLETED", completedAt: new Date() },
+        });
+        io.to(sessionId).emit("interview:complete", result);
+
+        await cleanupSession(sessionId);
+
+        console.log(`[sessionHandler] session=${sessionId} status → COMPLETED`);
+        return;
+      }
+    } catch (err) {
+      console.error("[sessionHandler] answer:submit error:", err);
+      io.to(sessionId).emit("interview:error", {
+        message: "Failed to process answer",
+      });
+    }
+  });
+
+  socket.on("interview:cancel", async (payload: CancelPayload) => {
+    const { sessionId, reason } = payload;
+
+    if (!sessionId) {
+      socket.emit("interview:error", { message: "sessionId is required" });
+      return;
+    }
+
+    try {
+      console.log(
+        `[sessionHandler] cancelling session=${sessionId} reason=${
+          reason ?? "none"
+        }`
+      );
+
+      await prisma.session.update({
+        where: {
+          id: sessionId,
+        },
+        data: {
+          status: "CANCELLED",
+          cancelledAt: new Date(),
+          cancelReason: reason ?? null,
+        },
+      });
+
+      io.to(sessionId).emit("interview:status", { status: "cancelled" });
+      await cleanupSession(sessionId);
+
+      socket.leave(sessionId);
+      console.log(`[sessionHandler] session=${sessionId} status → CANCELLED`);
+    } catch (err) {
+      console.error("[sessionHandler] interview:cancel error:", err);
+      socket.emit("interview:error", { message: "Failed to cancel interview" });
     }
   });
 }

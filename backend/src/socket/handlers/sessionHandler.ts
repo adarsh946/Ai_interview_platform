@@ -3,6 +3,7 @@ import prisma from "../../prisma/prisma.js";
 import { interviewGraph } from "../../langraph/interviewGraph.js";
 import { Command } from "@langchain/langgraph";
 import { redis } from "../../config/redis.js";
+import { textToSpeech } from "../../services/tts.js";
 
 interface JoinPayload {
   sessionId: string;
@@ -148,9 +149,12 @@ export function sessionHandler(io: Server, socket: Socket): void {
         `[sessionHandler] first question generated: "${currentQuestion}"`
       );
 
+      const audioBuffer = await textToSpeech(currentQuestion);
+
       // Emit question to all clients in the room
       io.to(sessionId).emit("interview:question", {
         question: currentQuestion,
+        audio: audioBuffer,
         questionNumber: questionCount,
       });
 
@@ -226,13 +230,13 @@ export function sessionHandler(io: Server, socket: Socket): void {
         await prisma.result.create({
           data: {
             sessionId,
-            transcript: JSON.stringify(transcript),
-            overallScore: Math.round(overallScore),
-            overallFeedback,
-            strengths,
-            improvements,
-            expressions: expressionsFromRedis,
-            screenshots: null,
+            transcript: JSON.stringify(result.transcript),
+            overallScore: Math.round(result.overallScore),
+            overallFeedback: result.overallFeedback,
+            strengths: result.strengths,
+            improvements: result.improvements,
+            expressions: result.expressions,
+            screenshots: undefined,
           },
         });
         await prisma.session.update({
@@ -245,6 +249,21 @@ export function sessionHandler(io: Server, socket: Socket): void {
 
         console.log(`[sessionHandler] session=${sessionId} status → COMPLETED`);
         return;
+      } else {
+        const currentQuestion = graphState.values.currentQuestion as string;
+        const questionCount = graphState.values.questionCount as number;
+
+        console.log(
+          `[sessionHandler] next question session=${sessionId} question="${currentQuestion}"`
+        );
+
+        const audioBuffer = await textToSpeech(currentQuestion);
+
+        io.to(sessionId).emit("interview:question", {
+          question: currentQuestion,
+          audio: audioBuffer,
+          questionNumber: questionCount,
+        });
       }
     } catch (err) {
       console.error("[sessionHandler] answer:submit error:", err);

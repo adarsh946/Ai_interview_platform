@@ -18,7 +18,7 @@ export function initializeSocket(httpServer: HttpServer): Server {
     sessionHandler(io, socket);
     frameHandler(io, socket);
 
-    socket.on("disconnet", () => {
+    socket.on("disconnect", () => {
       console.log(`[socket] client disconnected: ${socket.id}`);
     });
   });

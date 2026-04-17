@@ -1,9 +1,10 @@
 import { Router } from "express";
 import {
   cancelInterview,
-  completeInterview,
-  inProgressInterview,
+  // completeInterview,
+  // inProgressInterview,
   readyForInterview,
+  result,
   startSession,
 } from "../controllers/session.controller.js";
 import useMiddleware from "../middlewares/middleware.js";
@@ -12,8 +13,9 @@ const route = Router();
 
 route.post("/start-session", useMiddleware, startSession);
 route.post("/ready", useMiddleware, readyForInterview);
-route.post("/interview/in-progress", useMiddleware, inProgressInterview);
+// route.post("/interview/in-progress", useMiddleware, inProgressInterview);
 route.post("/interview/cancel", useMiddleware, cancelInterview);
-route.post("/interview/completed", useMiddleware, completeInterview);
+// route.post("/interview/completed", useMiddleware, completeInterview);
+route.post("/:sessionId", useMiddleware, result);
 
 export default route;

@@ -79,8 +79,10 @@ export const signinController = async (req: any, res: any) => {
         message: "User not found",
       });
     }
-    const hashedPassword = await bcrypt.hash(schema.data.password, 10);
-    const isValidPassword = bcrypt.compare(user.password, hashedPassword);
+    const isValidPassword = await bcrypt.compare(
+      schema.data.password,
+      user.password as string
+    );
 
     if (!isValidPassword) {
       return res.status(401).json({
@@ -88,11 +90,14 @@ export const signinController = async (req: any, res: any) => {
       });
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
+      expiresIn: "7d",
+    });
     if (!token)
       return res.status(401).json({ message: "problem in creating Token" });
 
-    res.status(201).json({ token });
+    res.cookie("token", token, { httpOnly: true, secure: true });
+    res.status(200).json({ message: "Signed in successfully" });
   } catch (error) {
     console.log(error);
     res.status(403).json({
@@ -101,4 +106,7 @@ export const signinController = async (req: any, res: any) => {
   }
 };
 
-export const logoutController = async (req: any, res: any) => {};
+export const logoutController = async (req: any, res: any) => {
+  res.clearCookie("token");
+  res.status(200).json({ message: "Logged out successfully" });
+};

@@ -1,15 +1,18 @@
 import { Router } from "express";
 import {
+  getMeController,
   signinController,
   signupController,
 } from "../controllers/auth.controller.js";
 import passport from "passport";
 import jwt from "jsonwebtoken";
+import useMiddleware from "../middlewares/middleware.js";
 
 const route = Router();
 
 route.post("/signup", signupController);
 route.post("/signin", signinController);
+route.get("/me", useMiddleware, getMeController);
 
 route.get(
   "/google",

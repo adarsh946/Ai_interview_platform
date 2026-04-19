@@ -6,8 +6,7 @@ interface customJwtPayload extends JwtPayload {
 }
 
 const useMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const header = req.headers["authorization"];
-  const token = header?.split(" ")[1];
+  const token = req.cookies.token;
 
   if (!token) {
     return res.status(401).json({

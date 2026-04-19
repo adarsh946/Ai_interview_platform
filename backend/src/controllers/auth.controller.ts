@@ -110,3 +110,32 @@ export const logoutController = async (req: any, res: any) => {
   res.clearCookie("token");
   res.status(200).json({ message: "Logged out successfully" });
 };
+
+export const getMeController = async (req: any, res: any) => {
+  const id = req.user.id;
+
+  if (!id) {
+    return res.status(401).json({
+      message: "User does not exist!",
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        email: true,
+        id: true,
+        fullName: true,
+      },
+    });
+
+    return res.status(201).json({
+      user,
+    });
+  } catch (err) {
+    console.error("User not found", err);
+  }
+};

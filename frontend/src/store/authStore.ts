@@ -17,6 +17,11 @@ interface AuthState {
 interface AuthAction {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  register: (
+    fullName: string,
+    email: string,
+    password: string
+  ) => Promise<void>;
   checkAuth: () => Promise<void>;
 }
 
@@ -33,6 +38,14 @@ export const useAuthStore = create<AuthState & AuthAction>((set) => ({
   logout: async () => {
     await api.post("auth/logout");
     set({ user: null, isAuthenticated: false });
+  },
+
+  register: async (fullName: string, email: string, password: string) => {
+    const { data } = await api.post("/auth/signup", {
+      fullName,
+      email,
+      password,
+    });
   },
 
   checkAuth: async () => {

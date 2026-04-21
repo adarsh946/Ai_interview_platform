@@ -7,6 +7,7 @@ import passport from "passport";
 import { redis } from "./config/redis.js";
 import { createServer } from "http";
 import { initializeSocket } from "./socket/index.js";
+import "./workers/resumeWorker.js";
 
 dotenv.config();
 

@@ -16,7 +16,7 @@ export const createMockService = async (req: any, res: any) => {
 
   const resumeUrl = req.file.location; // s3 url
   try {
-    const interview = prisma.mockInterview.create({
+    const interview = await prisma.mockInterview.create({
       data: {
         role: schema.data.role,
         round: schema.data.round,
@@ -24,7 +24,7 @@ export const createMockService = async (req: any, res: any) => {
         skills: schema.data.skills,
         difficulty: schema.data.difficulty,
         resume: resumeUrl,
-        userId: req.userId,
+        userId: req.user.id,
       },
     });
 
@@ -35,13 +35,13 @@ export const createMockService = async (req: any, res: any) => {
     }
 
     await resumeQueue.add("Process-resume", {
-      interviewId: (await interview).id,
+      interviewId: interview.id,
       resumeUrl,
     });
 
     return res.status(200).json({
       message: "Resume uploaded successfully. Processing started.",
-      interviewId: (await interview).id,
+      interviewId: interview.id,
       status: "processing",
     });
   } catch (error) {

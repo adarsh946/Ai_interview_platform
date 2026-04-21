@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { createMockInterview } from "../controllers/mock.controller.js";
+import {
+  createMockInterview,
+  getMyInterviews,
+} from "../controllers/mock.controller.js";
 import useMiddleware from "../middlewares/middleware.js";
 import { uploadResume } from "../utils/uploader.js";
 
@@ -11,5 +14,7 @@ route.post(
   uploadResume.single("resume"),
   createMockInterview
 );
+
+route.get("/my-interviews", useMiddleware, getMyInterviews);
 
 export default route;

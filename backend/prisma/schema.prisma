@@ -48,6 +48,7 @@ model MockInterview{
   skills         String[]
   resume         String?
   resumeText  String?
+  created_at  DateTime @default(now())
   user           User  @relation(fields: [userId], references: [id])
   userId         String   
 

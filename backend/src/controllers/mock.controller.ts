@@ -1,3 +1,4 @@
+import prisma from "../prisma/prisma.js";
 import { createMockService } from "../services/mock/mock-resume.js";
 
 export const createMockInterview = async (req: Request, res: any) => {
@@ -12,22 +13,32 @@ export const createMockInterview = async (req: Request, res: any) => {
   }
 };
 
-// import { extractResumeText } from "../utils/resumeParser";
+export const getMyInterviews = async (req: any, res: any) => {
+  const userid = req.user.id;
+  if (!userid) {
+    return res.status(401).json({
+      message: "user not found!",
+    });
+  }
 
-// export const createMockInterview = async (req, res) => {
-//   try {
-//     const fileBuffer = req.file.buffer;
+  try {
+    const interviews = await prisma.mockInterview.findMany({
+      where: {
+        userId: userid,
+      },
+      include: {
+        session: {
+          include: {
+            result: true,
+          },
+        },
+      },
+      orderBy: { created_at: "desc" },
+    });
 
-//     const resumeText = await extractResumeText(fileBuffer);
-
-//     // store in DB
-//     const interview = await MockInterview.create({
-//       ...req.body,
-//       resumeText,
-//     });
-
-//     res.status(201).json(interview);
-//   } catch (error) {
-//     res.status(500).json({ message: "Something went wrong" });
-//   }
-// };
+    res.status(200).json({ interviews });
+  } catch (err) {
+    console.error("[mock.controller] getMyInterviews error:", err);
+    res.status(500).json({ message: "Failed to fetch interviews" });
+  }
+};

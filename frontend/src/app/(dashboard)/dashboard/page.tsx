@@ -1,82 +1,76 @@
+"use client";
+
+import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import {
   BarChart2,
   CheckCircle2,
   Clock,
   Plus,
-  Star,
   Briefcase,
   ChevronRight,
   MessageSquare,
   Calendar,
   TrendingUp,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type InterviewStatus = "COMPLETED" | "IN_PROGRESS" | "PENDING" | "CANCELLED";
+type InterviewStatus =
+  | "COMPLETED"
+  | "IN_PROGRESS"
+  | "PENDING"
+  | "CANCELLED"
+  | "FAILED";
 
-interface MockInterview {
+interface Interview {
   id: string;
   role: string;
   round: string;
   difficulty: string;
-  status: InterviewStatus;
-  date: string;
+  duration: number;
+  skills: string[];
+  resume: string | null;
+  resumeText: string | null;
+  created_at: string;
+  session?: {
+    id: string;
+    status: string;
+    result?: {
+      overallScore: number;
+      overallFeedback: string;
+    } | null;
+  } | null;
 }
 
-const INTERVIEWS: MockInterview[] = [
-  {
-    id: "1",
-    role: "Frontend Developer",
-    round: "Technical",
-    difficulty: "Medium",
-    status: "COMPLETED",
-    date: "Apr 18, 2026",
-  },
-  {
-    id: "2",
-    role: "Product Manager",
-    round: "Behavioral",
-    difficulty: "Hard",
-    status: "IN_PROGRESS",
-    date: "Apr 20, 2026",
-  },
-  {
-    id: "3",
-    role: "Backend Engineer",
-    round: "System Design",
-    difficulty: "Easy",
-    status: "PENDING",
-    date: "Apr 21, 2026",
-  },
-];
+// ─── Config ───────────────────────────────────────────────────────────────────
 
 const statusConfig: Record<
   InterviewStatus,
-  { label: string; className: string; action: string }
+  { label: string; className: string }
 > = {
   COMPLETED: {
     label: "Completed",
     className: "bg-emerald-100 text-emerald-700 border border-emerald-200",
-    action: "View Result",
   },
   IN_PROGRESS: {
     label: "In Progress",
     className: "bg-blue-100 text-blue-700 border border-blue-200",
-    action: "Continue",
   },
   PENDING: {
     label: "Pending",
     className: "bg-amber-100 text-amber-700 border border-amber-200",
-    action: "Start Interview",
   },
   CANCELLED: {
     label: "Cancelled",
     className: "bg-red-100 text-red-700 border border-red-200",
-    action: "Retry",
+  },
+  FAILED: {
+    label: "Failed",
+    className: "bg-red-100 text-red-700 border border-red-200",
   },
 };
 
@@ -85,6 +79,33 @@ const difficultyConfig: Record<string, string> = {
   Medium: "bg-orange-50 text-orange-700 border border-orange-200",
   Hard: "bg-rose-50 text-rose-700 border border-rose-200",
 };
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+function getActionButton(interview: Interview): {
+  label: string;
+  href: string;
+} {
+  if (!interview.session)
+    return {
+      label: "Start Interview",
+      href: `/interview/setup/${interview.id}`,
+    };
+
+  const status = interview.session.status;
+
+  if (status === "COMPLETED")
+    return { label: "View Result", href: `/result/${interview.session.id}` };
+  if (status === "IN_PROGRESS")
+    return {
+      label: "Continue",
+      href: `/interview/room/${interview.session.id}`,
+    };
+  if (status === "CANCELLED" || status === "FAILED")
+    return { label: "Retry", href: `/interview/setup/${interview.id}` };
+
+  return { label: "Start Interview", href: `/interview/setup/${interview.id}` };
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -116,8 +137,18 @@ function StatCard({
   );
 }
 
-function InterviewCard({ interview }: { interview: MockInterview }) {
-  const status = statusConfig[interview.status];
+function InterviewCard({
+  interview,
+  actionLabel,
+  actionHref,
+}: {
+  interview: Interview;
+  actionLabel: string;
+  actionHref: string;
+}) {
+  const sessionStatus = (interview.session?.status ??
+    "PENDING") as InterviewStatus;
+  const status = statusConfig[sessionStatus] ?? statusConfig["PENDING"];
   const difficulty =
     difficultyConfig[interview.difficulty] ?? difficultyConfig["Medium"];
 
@@ -155,14 +186,21 @@ function InterviewCard({ interview }: { interview: MockInterview }) {
       {/* Date */}
       <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-4">
         <Calendar size={12} />
-        {interview.date}
+        {new Date(interview.created_at).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}
       </div>
 
       {/* Action */}
-      <button className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-sm font-medium text-slate-600 hover:text-emerald-700 transition-colors duration-150">
-        {status.action}
+      <Link
+        href={actionHref}
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-sm font-medium text-slate-600 hover:text-emerald-700 transition-colors duration-150"
+      >
+        {actionLabel}
         <ChevronRight size={14} />
-      </button>
+      </Link>
     </div>
   );
 }
@@ -179,10 +217,13 @@ function EmptyState() {
       <p className="text-sm text-slate-500 text-center max-w-xs mb-6">
         Start your first mock interview and get AI-powered feedback
       </p>
-      <button className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-emerald-200">
+      <Link
+        href="/mock/create"
+        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-emerald-200"
+      >
         <Plus size={16} />
         Create Interview
-      </button>
+      </Link>
     </div>
   );
 }
@@ -207,16 +248,50 @@ function SkeletonCard() {
   );
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function Page() {
-  const [interviews, setInterviews] = useState();
+  const [interviews, setInterviews] = useState<Interview[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const user = useAuthStore((state) => state.user);
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
 
-  const router = useRouter;
+  const router = useRouter();
 
-  useEffect(() => {});
+  // ── Protected route
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      // router.push("/login");
+    }
+  }, [isAuthenticated, authLoading]);
+
+  // ── Fetch interviews
+  useEffect(() => {
+    const fetchInterviews = async () => {
+      try {
+        const { data } = await api.get("/mock/my-interviews");
+        setInterviews(data.interviews);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchInterviews();
+  }, []);
+
+  // ── Derived stats
+  const total = interviews.length;
+  const completed = interviews.filter(
+    (i) => i.session?.status === "COMPLETED"
+  ).length;
+  const scores = interviews
+    .filter((i) => i.session?.result?.overallScore !== undefined)
+    .map((i) => i.session!.result!.overallScore);
+  const averageScore = scores.length
+    ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
+    : "N/A";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100">
@@ -228,45 +303,48 @@ export default function Page() {
       </div>
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* ── Page Header ──────────────────────────────────────────────────── */}
+        {/* ── Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-              Welcome back, John 👋
+              Welcome back, {user?.fullName} 👋
             </h1>
             <p className="text-slate-500 mt-1 text-sm">
               Here&apos;s an overview of your interview practice
             </p>
           </div>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-emerald-200 w-fit">
+          <Link
+            href="/mock/create"
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-emerald-200 w-fit"
+          >
             <Plus size={16} />
             New Interview
-          </button>
+          </Link>
         </div>
 
-        {/* ── Stats Row ────────────────────────────────────────────────────── */}
+        {/* ── Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           <StatCard
             icon={<BarChart2 size={20} className="text-emerald-600" />}
             label="Total Interviews"
-            value={12}
+            value={total}
             accent="bg-emerald-50 border border-emerald-100"
           />
           <StatCard
             icon={<CheckCircle2 size={20} className="text-emerald-600" />}
             label="Completed"
-            value={8}
+            value={completed}
             accent="bg-emerald-50 border border-emerald-100"
           />
           <StatCard
             icon={<TrendingUp size={20} className="text-emerald-600" />}
             label="Average Score"
-            value="7.4 / 10"
+            value={averageScore}
             accent="bg-emerald-50 border border-emerald-100"
           />
         </div>
 
-        {/* ── Interviews List ───────────────────────────────────────────────── */}
+        {/* ── Interviews List */}
         <div className="bg-white/50 backdrop-blur-sm rounded-2xl border border-white/60 shadow-xl shadow-slate-200/40 p-6">
           {/* Section header */}
           <div className="flex items-center justify-between mb-6">
@@ -279,7 +357,7 @@ export default function Page() {
               </h2>
             </div>
             <span className="text-xs text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-              {INTERVIEWS.length} total
+              {interviews.length} total
             </span>
           </div>
 
@@ -291,12 +369,20 @@ export default function Page() {
                 <SkeletonCard />
                 <SkeletonCard />
               </>
-            ) : showEmpty ? (
+            ) : interviews.length === 0 ? (
               <EmptyState />
             ) : (
-              INTERVIEWS.map((interview) => (
-                <InterviewCard key={interview.id} interview={interview} />
-              ))
+              interviews.map((interview) => {
+                const action = getActionButton(interview);
+                return (
+                  <InterviewCard
+                    key={interview.id}
+                    interview={interview}
+                    actionLabel={action.label}
+                    actionHref={action.href}
+                  />
+                );
+              })
             )}
           </div>
         </div>

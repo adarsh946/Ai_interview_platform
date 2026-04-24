@@ -40,12 +40,11 @@ export const createJobSchema = z.object({
 });
 
 export const createMockSchema = z.object({
-  role: z.string("Required field"),
+  role: z.string().min(1, "Required field"),
   difficulty: z.string(),
-  duration: z.number(),
+  duration: z.string().transform((val) => parseInt(val)),
   round: z.string(),
-  skills: z.array(string()),
-  resume: z.url(),
+  skills: z.string().transform((val) => JSON.parse(val)),
 });
 
 export const EvaluationSchema = z.object({

@@ -42,3 +42,32 @@ export const getMyInterviews = async (req: any, res: any) => {
     res.status(500).json({ message: "Failed to fetch interviews" });
   }
 };
+
+export const getMockInterview = async (req: any, res: any) => {
+  const interviewId = req.params.id;
+
+  if (!interviewId) {
+    return res.status(404).json({
+      message: "Interview id is not found!",
+    });
+  }
+
+  try {
+    const interview = await prisma.mockInterview.findUnique({
+      where: {
+        id: interviewId,
+      },
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        message: "Mock Interview is not found!",
+      });
+    }
+
+    return res.status(200).json({ interview });
+  } catch (err) {
+    console.error("Not able to find Mock interview", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

@@ -144,6 +144,12 @@ function Page({ params }: { params: { mockInterviewId: string } }) {
     };
   }, []);
 
+  const handleAudioTest = () => {
+    const audio = new Audio("/test-audio.mp3");
+    audio.play();
+    audio.onended = () => setAudioReady(true);
+  };
+
   const handleStartInterview = async () => {
     if (!mockInterview) {
       setError("Interview details not loaded. Please refresh.");
@@ -182,6 +188,8 @@ function Page({ params }: { params: { mockInterviewId: string } }) {
       setIsLoading(false);
     }
   };
+
+  const allCheckReady = cameraReady && micReady && audioReady;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 py-10 px-4">
@@ -226,17 +234,20 @@ function Page({ params }: { params: { mockInterviewId: string } }) {
                 autoPlay
                 muted
                 playsInline
+                ref={videoRef}
               />
 
               {/* Overlay when no camera */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center">
-                  <Camera size={24} className="text-slate-400" />
+              {!cameraReady && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center">
+                    <Camera size={24} className="text-slate-400" />
+                  </div>
+                  <p className="text-sm text-slate-400">
+                    Waiting for camera access…
+                  </p>
                 </div>
-                <p className="text-sm text-slate-400">
-                  Waiting for camera access…
-                </p>
-              </div>
+              )}
 
               {/* Corner label */}
               <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
@@ -264,20 +275,28 @@ function Page({ params }: { params: { mockInterviewId: string } }) {
                   icon={<Camera size={16} className="text-emerald-600" />}
                   label="Camera"
                   sublabel="HD Camera detected"
-                  status="ok"
+                  status={cameraReady ? "ok" : "checking"}
                 />
                 <CheckItem
                   icon={<Mic size={16} className="text-emerald-600" />}
                   label="Microphone"
                   sublabel="Built-in microphone active"
-                  status="ok"
+                  status={micReady ? "ok" : "checking"}
                 />
                 <CheckItem
                   icon={<Volume2 size={16} className="text-amber-500" />}
                   label="Audio Output"
-                  sublabel="No audio device found"
-                  status="fail"
+                  sublabel={audioReady ? "Audio working" : "Click to test"}
+                  status={audioReady ? "ok" : "checking"}
                 />
+                <button
+                  type="button"
+                  onClick={handleAudioTest}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-sm font-medium text-emerald-600 transition-colors mt-2"
+                >
+                  <Volume2 size={13} />
+                  Play Test Audio
+                </button>
               </div>
 
               <button className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-sm font-medium text-slate-600 transition-colors">
@@ -301,22 +320,22 @@ function Page({ params }: { params: { mockInterviewId: string } }) {
                 <DetailBadge
                   icon={<Briefcase size={14} className="text-emerald-600" />}
                   label="Role"
-                  value="Frontend Developer"
+                  value={mockInterview?.role ?? "Loading..."}
                 />
                 <DetailBadge
                   icon={<Layers size={14} className="text-emerald-600" />}
                   label="Round"
-                  value="Technical"
+                  value={mockInterview?.round ?? "Loading..."}
                 />
                 <DetailBadge
                   icon={<BarChart2 size={14} className="text-emerald-600" />}
                   label="Difficulty"
-                  value="Medium"
+                  value={mockInterview?.difficulty ?? "Loading..."}
                 />
                 <DetailBadge
                   icon={<Clock size={14} className="text-emerald-600" />}
                   label="Duration"
-                  value="30 minutes"
+                  value={`${mockInterview?.duration ?? "--"} min`}
                 />
               </div>
             </div>
@@ -378,9 +397,22 @@ function Page({ params }: { params: { mockInterviewId: string } }) {
         </div>
 
         {/* ── Start button ──────────────────────────────────────────────────── */}
-        <button className="w-full flex items-center justify-center gap-2 py-3.5 px-6 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-2xl transition-colors shadow-lg shadow-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2">
-          Start Interview
-          <ChevronRight size={16} />
+        <button
+          className="w-full flex items-center justify-center gap-2 py-3.5 px-6 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-2xl transition-colors shadow-lg shadow-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2"
+          onClick={handleStartInterview}
+          disabled={!allCheckReady || isLoading}
+        >
+          {isLoading ? (
+            <>
+              <RefreshCw size={16} className="animate-spin" />
+              Starting...
+            </>
+          ) : (
+            <>
+              Start Interview
+              <ChevronRight size={16} />
+            </>
+          )}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import socket from "@/lib/socket";
+import { Mic, Phone, User, Video } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 
@@ -355,98 +356,210 @@ function Page({ params }: { params: { sessionId: string } }) {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-        <span className="font-bold text-emerald-400 text-lg">BaatCheet</span>
-        <span className="text-2xl font-mono font-bold text-white">
-          {formatTime(timeLeft)}
-        </span>
-        <button
-          onClick={handleEndInterview}
-          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl transition-colors"
-        >
-          End Interview
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* Status indicator */}
-        <div className="text-center">
-          <span className="text-sm text-slate-400">
-            {status === "starting" && "Preparing your interview..."}
-            {status === "ai-speaking" && "AI Interviewer is speaking..."}
-            {status === "listening" && "Listening to your answer..."}
-            {status === "processing" && "Evaluating your answer..."}
-            {status === "done" && "Interview complete!"}
-          </span>
-        </div>
-
-        {/* AI Avatar */}
-        <div className="flex justify-center">
-          <div
-            className={`w-32 h-32 rounded-full bg-emerald-500 flex items-center justify-center text-4xl
-            ${
-              status === "ai-speaking"
-                ? "ring-4 ring-emerald-400 ring-offset-4 ring-offset-slate-950 animate-pulse"
-                : ""
-            }
-            ${status === "processing" ? "opacity-50" : ""}
-          `}
-          >
-            🤖
+    <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-screen lg:overflow-hidden">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-4 sm:px-6 lg:h-full lg:px-8">
+        {/* Top bar */}
+        <header className="flex flex-shrink-0 items-center justify-between">
+          <div className="flex flex-col">
+            <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
+              Mock Interview
+            </span>
+            <h1 className="text-lg font-bold text-slate-900 sm:text-xl">
+              Frontend Developer
+            </h1>
           </div>
-        </div>
 
-        {/* Question */}
-        <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-          <p className="text-xs text-slate-500 font-medium mb-2">Question</p>
-          <p className="text-white text-sm leading-relaxed">
-            {currentQuestion || "Waiting for first question..."}
-          </p>
-        </div>
+          {/* Timer badge */}
+          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3.5 py-1.5 ring-1 ring-emerald-200">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            </span>
+            <span className="font-mono text-sm font-semibold tabular-nums text-emerald-700">
+              00:12:34
+            </span>
+          </div>
+        </header>
 
-        {/* Answer */}
-        <div
-          className={`bg-slate-900 rounded-2xl p-5 border transition-colors
-          ${isMicActive ? "border-emerald-500" : "border-slate-800"}
-        `}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-slate-500 font-medium">Your Answer</p>
-            {isMicActive && (
-              <span className="text-xs text-emerald-400 animate-pulse">
-                🎤 Listening...
+        {/* Main content: left video stack + right chat */}
+        <section className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-5">
+          {/* LEFT — video stack */}
+          <div className="flex min-h-0 flex-col gap-3 sm:gap-4 lg:col-span-3">
+            {/* Videos area: on desktop fills available height, splits 50/50.
+                On mobile each tile keeps a 16:9 ratio. */}
+            <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">
+              {/* AI Interviewer (top) */}
+              <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 to-slate-200 shadow-sm aspect-video lg:aspect-auto lg:min-h-0 lg:flex-1 lg:basis-0">
+                <div className="absolute inset-0 flex items-center justify-center p-4">
+                  <div className="relative aspect-square h-[70%] max-h-56 min-h-20">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/30" />
+                    <span
+                      className="absolute inset-[7%] animate-pulse rounded-full bg-blue-400/30"
+                      style={{ animationDuration: "2.5s" }}
+                    />
+                    <span className="absolute inset-[15%] rounded-full bg-gradient-to-br from-blue-500/40 to-emerald-500/40 blur-xl" />
+                    <div className="absolute inset-[18%] flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-cyan-500 to-emerald-500 shadow-2xl">
+                      <span className="text-2xl font-bold tracking-wide text-white sm:text-3xl">
+                        AI
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute bottom-3 left-3 rounded-md bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-700 backdrop-blur-sm">
+                  AI Interviewer
+                </div>
+              </div>
+
+              {/* Candidate (bottom) */}
+              <div className="relative w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-sm aspect-video lg:aspect-auto lg:min-h-0 lg:flex-1 lg:basis-0">
+                <div className="absolute inset-0 flex items-center justify-center p-4">
+                  <div className="flex aspect-square h-[70%] max-h-56 min-h-20 items-center justify-center rounded-full bg-slate-800/80">
+                    <User className="h-1/2 w-1/2 text-slate-600" />
+                  </div>
+                </div>
+                <div className="absolute bottom-3 left-3 rounded-md bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                  You
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT — chat (40% on lg) */}
+          <aside className="flex min-h-[400px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2 lg:min-h-0">
+            {/* Chat header */}
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-emerald-500">
+                  <span className="text-xs font-bold text-white">AI</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Live Transcript
+                  </p>
+                  <p className="text-xs text-slate-500">Conversation history</p>
+                </div>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+                Live
               </span>
-            )}
-          </div>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            {currentAnswer || "Your answer will appear here as you speak..."}
-          </p>
-        </div>
+            </div>
 
-        {/* Error */}
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
-      </div>
+            {/* Messages — scrollable */}
+            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+              {/* AI message */}
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-emerald-500">
+                  <span className="text-[10px] font-bold text-white">AI</span>
+                </div>
+                <div className="flex max-w-[85%] flex-col gap-1">
+                  <div className="rounded-2xl rounded-tl-sm bg-slate-100 px-4 py-2.5">
+                    <p className="text-sm leading-relaxed text-slate-800">
+                      Hi! Let's get started with a few questions about your
+                      background.
+                    </p>
+                  </div>
+                  <span className="px-1 text-[10px] text-slate-400">
+                    10:02 AM
+                  </span>
+                </div>
+              </div>
 
-      {/* Candidate Video — bottom right */}
-      <div className="fixed bottom-6 right-6">
-        <div className="w-40 h-28 rounded-xl overflow-hidden border-2 border-slate-700 bg-slate-900">
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          />
+              {/* User message */}
+              <div className="flex flex-row-reverse gap-3">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-800">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex max-w-[85%] flex-col items-end gap-1">
+                  <div className="rounded-2xl rounded-tr-sm bg-emerald-600 px-4 py-2.5">
+                    <p className="text-sm leading-relaxed text-white">
+                      Sure, I'm ready whenever you are.
+                    </p>
+                  </div>
+                  <span className="px-1 text-[10px] text-slate-400">
+                    10:02 AM
+                  </span>
+                </div>
+              </div>
+
+              {/* AI question */}
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-emerald-500">
+                  <span className="text-[10px] font-bold text-white">AI</span>
+                </div>
+                <div className="flex max-w-[85%] flex-col gap-1">
+                  <div className="rounded-2xl rounded-tl-sm border border-emerald-200 bg-emerald-50 px-4 py-2.5">
+                    <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                      Current Question
+                    </span>
+                    <p className="text-sm font-medium leading-relaxed text-slate-900">
+                      Tell me about your experience with React and component
+                      architecture
+                    </p>
+                  </div>
+                  <span className="px-1 text-[10px] text-slate-400">
+                    10:03 AM
+                  </span>
+                </div>
+              </div>
+
+              {/* User answer (live) */}
+              <div className="flex flex-row-reverse gap-3">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-800">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex max-w-[85%] flex-col items-end gap-1">
+                  <div className="rounded-2xl rounded-tr-sm bg-emerald-600 px-4 py-2.5">
+                    <p className="text-sm leading-relaxed text-white">
+                      I have been working with React for about 3 years
+                      <span className="ml-0.5 inline-block h-3.5 w-0.5 translate-y-0.5 animate-pulse bg-white align-middle" />
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-1">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                    <span className="text-[10px] font-medium text-emerald-600">
+                      Speaking…
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer note */}
+            <div className="flex flex-shrink-0 items-center justify-center gap-2 border-t border-slate-200 bg-slate-50 px-4 py-2.5">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+              <span className="text-[11px] font-medium text-slate-500">
+                Transcribing in real time
+              </span>
+            </div>
+          </aside>
+        </section>
+
+        {/* Controls — centered, outside both panels */}
+        <div className="flex flex-shrink-0 items-center justify-center gap-4 pt-1 sm:gap-6">
+          <button
+            type="button"
+            aria-label="Toggle microphone"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-slate-700 shadow-md transition hover:bg-slate-300"
+          >
+            <Mic className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            aria-label="End call"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition hover:bg-red-600"
+          >
+            <Phone className="h-6 w-6 rotate-[135deg]" />
+          </button>
+          <button
+            type="button"
+            aria-label="Toggle camera"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-slate-700 shadow-md transition hover:bg-slate-300"
+          >
+            <Video className="h-5 w-5" />
+          </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

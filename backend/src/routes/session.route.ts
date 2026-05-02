@@ -16,6 +16,6 @@ route.post("/ready", useMiddleware, readyForInterview);
 // route.post("/interview/in-progress", useMiddleware, inProgressInterview);
 route.post("/interview/cancel", useMiddleware, cancelInterview);
 // route.post("/interview/completed", useMiddleware, completeInterview);
-route.post("/:sessionId", useMiddleware, result);
+route.get("/:sessionId", useMiddleware, result);
 
 export default route;

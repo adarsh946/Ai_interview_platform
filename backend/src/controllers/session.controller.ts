@@ -304,7 +304,7 @@ export const result = async (req: any, res: any) => {
         ? JSON.parse(result.transcript)
         : result.transcript;
 
-    res.status(200).json({
+    return res.status(200).json({
       ...result,
       transcript,
     });

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 import { BarChart, Bar, XAxis, ResponsiveContainer } from "recharts";
+import { useRouter } from "next/router";
 
 interface TranscriptEntry {
   question: string;
@@ -68,6 +69,8 @@ export default function Page({ params }: { params: { sessionId: string } }) {
     fetchResult();
   }, []);
 
+  const router = useRouter();
+
   const getScoreLabel = (score: number): string => {
     if (score >= 7) return "Excellent";
     if (score >= 5) return "Good";
@@ -86,13 +89,26 @@ export default function Page({ params }: { params: { sessionId: string } }) {
     return "text-red-500";
   };
 
-  const chartData = [
-    { name: "Q1", score: 8 },
-    { name: "Q2", score: 6 },
-    { name: "Q3", score: 9 },
-    { name: "Q4", score: 7 },
-    { name: "Q5", score: 5 },
-  ];
+  const chartData =
+    result?.transcript.map((entry, index) => ({
+      name: `Q${index + 1}`,
+      score: entry.score,
+    })) ?? [];
+
+  if (error)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+
+  if (isLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-500">Loading your results...</p>
+      </div>
+    );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 p-4 md:p-8">
       {/* HEADER */}
@@ -100,6 +116,7 @@ export default function Page({ params }: { params: { sessionId: string } }) {
         <Button
           variant="ghost"
           className="absolute left-0 flex items-center gap-2 text-slate-600"
+          onClick={() => router.push("/dashboard")}
         >
           <ArrowLeft size={18} /> Dashboard
         </Button>
@@ -108,7 +125,7 @@ export default function Page({ params }: { params: { sessionId: string } }) {
           <h1 className="text-3xl font-bold text-slate-800">
             Interview Complete
           </h1>
-          <p className="text-slate-500 mt-1">Here's how you performed, John</p>
+          <p className="text-slate-500 mt-1">Here's how you performed</p>
         </div>
       </div>
 
@@ -119,20 +136,22 @@ export default function Page({ params }: { params: { sessionId: string } }) {
           <div className="w-36 h-36 rounded-full bg-emerald-100 flex items-center justify-center shadow-inner">
             <div className="text-center">
               <div className="text-4xl font-bold text-emerald-600">
-                7.8
+                {result?.overallScore}
                 <span className="text-lg text-slate-500">/10</span>
               </div>
             </div>
           </div>
 
           <p className="mt-4 text-lg font-semibold text-emerald-600">
-            Excellent
+            {getScoreLabel(result?.overallScore ?? 0)}
           </p>
 
           {/* Pills */}
           <div className="flex flex-wrap gap-3 mt-4">
             <Badge className="bg-emerald-100 text-emerald-700">
-              Frontend Developer
+              {result?.session?.mockInterview?.role}
+              {result?.session?.mockInterview?.round}
+              {result?.session?.mockInterview?.difficulty}
             </Badge>
             <Badge className="bg-slate-100 text-slate-700">Technical</Badge>
             <Badge className="bg-slate-100 text-slate-700">Medium</Badge>
@@ -152,10 +171,7 @@ export default function Page({ params }: { params: { sessionId: string } }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-slate-600 leading-relaxed">
-              You demonstrated strong understanding of core frontend concepts,
-              particularly React fundamentals and component structuring. Your
-              explanations were clear and confident, though some optimization
-              techniques could be improved.
+              {result?.overallFeedback ?? "No feedback available"}
             </CardContent>
           </Card>
 
@@ -167,15 +183,11 @@ export default function Page({ params }: { params: { sessionId: string } }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
-              <Badge className="bg-emerald-100 text-emerald-700">
-                Strong React Basics
-              </Badge>
-              <Badge className="bg-emerald-100 text-emerald-700">
-                Clean Code Structure
-              </Badge>
-              <Badge className="bg-emerald-100 text-emerald-700">
-                Good Communication
-              </Badge>
+              {result?.strengths.map((strength, index) => (
+                <Badge key={index} className="bg-emerald-100 text-emerald-700">
+                  {strength}
+                </Badge>
+              ))}
             </CardContent>
           </Card>
         </div>
@@ -190,15 +202,11 @@ export default function Page({ params }: { params: { sessionId: string } }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
-              <Badge className="bg-amber-100 text-amber-700">
-                Performance Optimization
-              </Badge>
-              <Badge className="bg-amber-100 text-amber-700">
-                Advanced Hooks Usage
-              </Badge>
-              <Badge className="bg-amber-100 text-amber-700">
-                Edge Case Handling
-              </Badge>
+              {result?.improvements.map((improvement, index) => (
+                <Badge key={index} className="bg-amber-100 text-amber-700">
+                  {improvement}
+                </Badge>
+              ))}
             </CardContent>
           </Card>
 
@@ -225,34 +233,48 @@ export default function Page({ params }: { params: { sessionId: string } }) {
           <CardTitle>Interview Transcript</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {[1, 2, 3].map((q) => (
+          {result?.transcript.map((entry, index) => (
             <div
-              key={q}
+              key={index}
               className="border rounded-xl p-4 bg-white/70 flex flex-col gap-2"
             >
               <div className="flex justify-between items-center">
                 <div className="font-semibold text-slate-700">
-                  Q{q}: Explain React hooks
+                  Q{index + 1}: {entry.question}
                 </div>
-
                 <div className="flex items-center gap-3">
-                  <Badge className="bg-emerald-100 text-emerald-700">
-                    {q === 1 ? 8 : q === 2 ? 6 : 9}
+                  <Badge
+                    className={`${getScoreBg(entry.score)} ${getScoreColor(
+                      entry.score
+                    )}`}
+                  >
+                    {entry.score}/10
                   </Badge>
-                  <ChevronDown size={18} />
+                  <button
+                    onClick={() =>
+                      setExpandIndex(expandIndex === index ? null : index)
+                    }
+                  >
+                    <ChevronDown
+                      size={18}
+                      className={`transition-transform ${
+                        expandIndex === index ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
 
-              <div className="text-sm text-slate-600">
-                <p>
-                  <strong>Answer:</strong> React hooks allow functional
-                  components to manage state and lifecycle features.
-                </p>
-                <p>
-                  <strong>Evaluation:</strong> Good explanation, but lacked
-                  depth in use cases.
-                </p>
-              </div>
+              {expandIndex === index && (
+                <div className="text-sm text-slate-600 mt-2 space-y-1">
+                  <p>
+                    <strong>Answer:</strong> {entry.answer}
+                  </p>
+                  <p>
+                    <strong>Evaluation:</strong> {entry.evaluation}
+                  </p>
+                </div>
+              )}
             </div>
           ))}
         </CardContent>
@@ -260,8 +282,10 @@ export default function Page({ params }: { params: { sessionId: string } }) {
 
       {/* ACTION BUTTONS */}
       <div className="flex justify-center gap-4">
-        <Button variant="outline">Try Again</Button>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+        <Button variant="outline" onClick={() => router.push("/mock/create")}>
+          Try Again
+        </Button>
+        <Button onClick={() => router.push("/dashboard")}>
           Back to Dashboard
         </Button>
       </div>

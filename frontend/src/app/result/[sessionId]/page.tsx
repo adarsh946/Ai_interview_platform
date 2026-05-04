@@ -1,5 +1,22 @@
+"use client";
+
 import api from "@/lib/api";
 import { useEffect, useState } from "react";
+
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Quote,
+  TrendingUp,
+  ChevronDown,
+} from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+import { BarChart, Bar, XAxis, ResponsiveContainer } from "recharts";
 
 interface TranscriptEntry {
   question: string;
@@ -68,5 +85,186 @@ export default function Page({ params }: { params: { sessionId: string } }) {
     if (score >= 5) return "text-amber-500";
     return "text-red-500";
   };
-  return;
+
+  const chartData = [
+    { name: "Q1", score: 8 },
+    { name: "Q2", score: 6 },
+    { name: "Q3", score: 9 },
+    { name: "Q4", score: 7 },
+    { name: "Q5", score: 5 },
+  ];
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 p-4 md:p-8">
+      {/* HEADER */}
+      <div className="relative flex items-center justify-center mb-8">
+        <Button
+          variant="ghost"
+          className="absolute left-0 flex items-center gap-2 text-slate-600"
+        >
+          <ArrowLeft size={18} /> Dashboard
+        </Button>
+
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-slate-800">
+            Interview Complete
+          </h1>
+          <p className="text-slate-500 mt-1">Here's how you performed, John</p>
+        </div>
+      </div>
+
+      {/* HERO SCORE CARD */}
+      <Card className="rounded-2xl shadow-xl border border-white/60 backdrop-blur-sm mb-8">
+        <CardContent className="flex flex-col items-center py-10">
+          {/* Score Circle */}
+          <div className="w-36 h-36 rounded-full bg-emerald-100 flex items-center justify-center shadow-inner">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-emerald-600">
+                7.8
+                <span className="text-lg text-slate-500">/10</span>
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-4 text-lg font-semibold text-emerald-600">
+            Excellent
+          </p>
+
+          {/* Pills */}
+          <div className="flex flex-wrap gap-3 mt-4">
+            <Badge className="bg-emerald-100 text-emerald-700">
+              Frontend Developer
+            </Badge>
+            <Badge className="bg-slate-100 text-slate-700">Technical</Badge>
+            <Badge className="bg-slate-100 text-slate-700">Medium</Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* TWO COLUMN SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* LEFT COLUMN */}
+        <div className="flex flex-col gap-6">
+          {/* AI Feedback */}
+          <Card className="rounded-2xl shadow-xl border border-white/60 backdrop-blur-sm h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Quote size={18} /> AI Feedback
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-slate-600 leading-relaxed">
+              You demonstrated strong understanding of core frontend concepts,
+              particularly React fundamentals and component structuring. Your
+              explanations were clear and confident, though some optimization
+              techniques could be improved.
+            </CardContent>
+          </Card>
+
+          {/* Strengths */}
+          <Card className="rounded-2xl shadow-xl border border-white/60 backdrop-blur-sm h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-emerald-600">
+                <CheckCircle2 size={18} /> Strengths
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              <Badge className="bg-emerald-100 text-emerald-700">
+                Strong React Basics
+              </Badge>
+              <Badge className="bg-emerald-100 text-emerald-700">
+                Clean Code Structure
+              </Badge>
+              <Badge className="bg-emerald-100 text-emerald-700">
+                Good Communication
+              </Badge>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="flex flex-col gap-6">
+          {/* Improvements */}
+          <Card className="rounded-2xl shadow-xl border border-white/60 backdrop-blur-sm h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-amber-600">
+                <TrendingUp size={18} /> Areas to Improve
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              <Badge className="bg-amber-100 text-amber-700">
+                Performance Optimization
+              </Badge>
+              <Badge className="bg-amber-100 text-amber-700">
+                Advanced Hooks Usage
+              </Badge>
+              <Badge className="bg-amber-100 text-amber-700">
+                Edge Case Handling
+              </Badge>
+            </CardContent>
+          </Card>
+
+          {/* Chart */}
+          <Card className="rounded-2xl shadow-xl border border-white/60 backdrop-blur-sm h-full">
+            <CardHeader>
+              <CardTitle>Question Scores</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" stroke="#64748b" />
+                  <Bar dataKey="score" fill="#10b981" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* TRANSCRIPT */}
+      <Card className="rounded-2xl shadow-xl border border-white/60 backdrop-blur-sm mb-8">
+        <CardHeader>
+          <CardTitle>Interview Transcript</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map((q) => (
+            <div
+              key={q}
+              className="border rounded-xl p-4 bg-white/70 flex flex-col gap-2"
+            >
+              <div className="flex justify-between items-center">
+                <div className="font-semibold text-slate-700">
+                  Q{q}: Explain React hooks
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Badge className="bg-emerald-100 text-emerald-700">
+                    {q === 1 ? 8 : q === 2 ? 6 : 9}
+                  </Badge>
+                  <ChevronDown size={18} />
+                </div>
+              </div>
+
+              <div className="text-sm text-slate-600">
+                <p>
+                  <strong>Answer:</strong> React hooks allow functional
+                  components to manage state and lifecycle features.
+                </p>
+                <p>
+                  <strong>Evaluation:</strong> Good explanation, but lacked
+                  depth in use cases.
+                </p>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* ACTION BUTTONS */}
+      <div className="flex justify-center gap-4">
+        <Button variant="outline">Try Again</Button>
+        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+          Back to Dashboard
+        </Button>
+      </div>
+    </div>
+  );
 }

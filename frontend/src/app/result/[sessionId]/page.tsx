@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 import { BarChart, Bar, XAxis, ResponsiveContainer } from "recharts";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 interface TranscriptEntry {
   question: string;
@@ -133,9 +133,17 @@ export default function Page({ params }: { params: { sessionId: string } }) {
       <Card className="rounded-2xl shadow-xl border border-white/60 backdrop-blur-sm mb-8">
         <CardContent className="flex flex-col items-center py-10">
           {/* Score Circle */}
-          <div className="w-36 h-36 rounded-full bg-emerald-100 flex items-center justify-center shadow-inner">
+          <div
+            className={`w-36 h-36 rounded-full flex items-center justify-center shadow-inner ring-2 ${getScoreBg(
+              result?.overallScore ?? 0
+            )}`}
+          >
             <div className="text-center">
-              <div className="text-4xl font-bold text-emerald-600">
+              <div
+                className={`text-4xl font-bold ${getScoreColor(
+                  result?.overallScore ?? 0
+                )}`}
+              >
                 {result?.overallScore}
                 <span className="text-lg text-slate-500">/10</span>
               </div>
@@ -150,11 +158,13 @@ export default function Page({ params }: { params: { sessionId: string } }) {
           <div className="flex flex-wrap gap-3 mt-4">
             <Badge className="bg-emerald-100 text-emerald-700">
               {result?.session?.mockInterview?.role}
+            </Badge>
+            <Badge className="bg-slate-100 text-slate-700">
               {result?.session?.mockInterview?.round}
+            </Badge>
+            <Badge className="bg-slate-100 text-slate-700">
               {result?.session?.mockInterview?.difficulty}
             </Badge>
-            <Badge className="bg-slate-100 text-slate-700">Technical</Badge>
-            <Badge className="bg-slate-100 text-slate-700">Medium</Badge>
           </div>
         </CardContent>
       </Card>
@@ -183,7 +193,7 @@ export default function Page({ params }: { params: { sessionId: string } }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
-              {result?.strengths.map((strength, index) => (
+              {(result?.strengths ?? []).map((strength, index) => (
                 <Badge key={index} className="bg-emerald-100 text-emerald-700">
                   {strength}
                 </Badge>
@@ -202,7 +212,7 @@ export default function Page({ params }: { params: { sessionId: string } }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
-              {result?.improvements.map((improvement, index) => (
+              {(result?.improvements ?? []).map((improvement, index) => (
                 <Badge key={index} className="bg-amber-100 text-amber-700">
                   {improvement}
                 </Badge>
@@ -233,7 +243,7 @@ export default function Page({ params }: { params: { sessionId: string } }) {
           <CardTitle>Interview Transcript</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {result?.transcript.map((entry, index) => (
+          {(result?.transcript ?? []).map((entry, index) => (
             <div
               key={index}
               className="border rounded-xl p-4 bg-white/70 flex flex-col gap-2"

@@ -103,3 +103,128 @@ model Result{
   sessionId   String    @unique
   session     Session @relation(fields: [sessionId], references: [id])   
 }
+
+
+enum SubscriptionInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum CreditTransactionType {
+  CREDIT
+  DEBIT
+}
+
+model User {
+  id                String               @id @default(cuid())
+  fullName          String
+  email             String               @unique
+  password          String?
+  provider          String
+
+  wallet            Wallet?
+  subscriptions     UserSubscription[]
+  payments          Payment[]
+  interviews        MockInterview[]
+
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+}
+
+model Wallet {
+  id                String               @id @default(cuid())
+  userId            String               @unique
+  balance           Int                  @default(0)
+
+  user              User                 @relation(fields: [userId], references: [id])
+  transactions      CreditTransaction[]
+
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+}
+
+model CreditTransaction {
+  id                String                 @id @default(cuid())
+  walletId          String
+
+  type              CreditTransactionType
+  amount            Int
+  reason            String
+
+  sessionId         String?
+  paymentId         String?
+
+  wallet            Wallet                 @relation(fields: [walletId], references: [id])
+
+  createdAt         DateTime               @default(now())
+}
+
+model SubscriptionPlan {
+  id                String                 @id @default(cuid())
+  name              String                 @unique
+
+  price             Float
+  creditsPerCycle   Int
+
+  interval          SubscriptionInterval
+
+  active            Boolean                @default(true)
+
+  subscriptions     UserSubscription[]
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model UserSubscription {
+  id                    String                @id @default(cuid())
+
+  userId                String
+  planId                String
+
+  status                SubscriptionStatus
+
+  startDate             DateTime
+  endDate               DateTime
+
+  providerSubscriptionId String?             @unique
+
+  user                  User                  @relation(fields: [userId], references: [id])
+  plan                  SubscriptionPlan      @relation(fields: [planId], references: [id])
+
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+}
+
+model Payment {
+  id                  String           @id @default(cuid())
+
+  userId              String
+
+  amount              Float
+  currency            String           @default("INR")
+
+  status              PaymentStatus
+
+  provider            String
+  providerPaymentId   String?          @unique
+
+  user                User             @relation(fields: [userId], references: [id])
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+}

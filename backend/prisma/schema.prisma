@@ -83,6 +83,9 @@ model Session {
     creditTransactions  CreditTransaction[]
 
   result           Result?
+
+@@index([userId])
+@@index([mockInterviewId])
 }
 
 enum SessionStatus{
@@ -159,6 +162,8 @@ model CreditTransaction {
   amount            Int
   reason            String
 
+   expiresAt   DateTime? 
+
   sessionId         String?
   paymentId         String?
 
@@ -167,7 +172,24 @@ model CreditTransaction {
   createdAt         DateTime               @default(now())
 
   session    Session?  @relation(fields: [sessionId], references: [id])
+
+  @@index([walletId])
+@@index([sessionId])
 }
+
+
+model CreditPack {
+  id          String    @id @default(cuid())
+  name        String    @unique  // "Starter Pack", "Booster Pack"
+  price       Float
+  credits     Int
+  validDays   Int?      // credits expire after X days, null = never
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+   payments    Payment[]
+}
+
 
 model SubscriptionPlan {
   id                String                 @id @default(cuid())
@@ -181,6 +203,7 @@ model SubscriptionPlan {
   active            Boolean                @default(true)
 
   subscriptions     UserSubscription[]
+   payments    Payment[]
 
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
@@ -204,6 +227,9 @@ model UserSubscription {
 
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
+
+  @@index([userId])
+@@index([planId])
 }
 
 model Payment {
@@ -219,8 +245,17 @@ model Payment {
   provider            String
   providerPaymentId   String?          @unique
 
+  // what did they buy?
+  planId              String?       // if subscription
+  packId              String?       // if one-time pack
+
+  plan                SubscriptionPlan?  @relation(fields: [planId], references: [id])
+  pack                CreditPack?        @relation(fields: [packId], references: [id])
+
   user                User             @relation(fields: [userId], references: [id])
 
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
+
+  @@index([userId])
 }

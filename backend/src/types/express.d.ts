@@ -11,6 +11,8 @@ declare global {
 
 declare global {
   namespace Express {
-    interface User extends User {} // passport attaches this
+    interface User extends User {
+      id: string;
+    } // passport attaches this
   }
 }

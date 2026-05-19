@@ -31,6 +31,19 @@ passport.use(
               fullName: profile.displayName,
               email,
               provider: "google",
+              wallet: {
+                create: {
+                  balance: 3,
+                  transactions: {
+                    create: {
+                      type: "CREDIT",
+                      amount: 3,
+                      reason: "signup bonus",
+                      expiresAt: null,
+                    },
+                  },
+                },
+              },
             },
           });
         }
@@ -61,7 +74,9 @@ passport.use(
           return done(new Error("email not found"), undefined);
         }
 
-        let user = await prisma.user.findUnique({ where: { email } });
+        let user = await prisma.user.findUnique({
+          where: { email },
+        });
         if (!user) {
           user = await prisma.user.create({
             data: {
@@ -69,6 +84,19 @@ passport.use(
                 profile.displayName || profile.username || "Github user",
               email,
               provider: "github",
+              wallet: {
+                create: {
+                  balance: 3,
+                  transactions: {
+                    create: {
+                      type: "CREDIT",
+                      amount: 3,
+                      reason: "signup bonus",
+                      expiresAt: null,
+                    },
+                  },
+                },
+              },
             },
           });
         }

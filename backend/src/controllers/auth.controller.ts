@@ -27,33 +27,34 @@ export const signupController = async (req: any, res: any) => {
 
     const hashedPassword = await bcrypt.hash(schema.data.password, 10);
 
-    if (!hashedPassword) {
-      return res.status(500).json({
-        message: "Problem in hashing the password!",
-      });
-    }
-
     const newUser = await prisma.user.create({
       data: {
         fullName: schema.data.fullName,
         password: hashedPassword,
         email: schema.data.email,
         provider: "local",
+        wallet: {
+          create: {
+            balance: 3,
+            transactions: {
+              create: {
+                type: "CREDIT",
+                amount: 3,
+                reason: "signup bonus",
+                expiresAt: null,
+              },
+            },
+          },
+        },
       },
     });
-
-    if (!newUser) {
-      return res.status(401).json({
-        message: "Problem in creating account",
-      });
-    }
 
     res.status(201).json({
       message: "Account created Successfully!",
     });
   } catch (error) {
-    return res.status(401).json({
-      message: "User already Exists!",
+    return res.status(500).json({
+      message: "Internal server error",
     });
   }
 };

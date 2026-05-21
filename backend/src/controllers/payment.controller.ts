@@ -76,6 +76,10 @@ export const webhookHandler = async (req: any, res: any) => {
     process.env.RAZORPAY_WEBHOOK_SECRET!
   );
 
+  if (!validate) {
+    return res.status(400).json({ message: "Invalid signature" });
+  }
+
   // Then parse it yourself:
   const payload = JSON.parse(rawBody);
 
@@ -104,6 +108,10 @@ export const webhookHandler = async (req: any, res: any) => {
     });
   }
 
+  if (!payment.user.wallet) {
+    return res.status(400).json({ message: "User wallet not found" });
+  }
+
   if (payment.status == "SUCCESS") {
     return res.status(200).json({
       message: "already processed",
@@ -112,6 +120,7 @@ export const webhookHandler = async (req: any, res: any) => {
 
   let credits: number = 0;
   let expiresAt: Date | null = null;
+  const endDate = new Date();
 
   if (payment.planId) {
     const plan = await prisma.subscriptionPlan.findUnique({
@@ -120,7 +129,15 @@ export const webhookHandler = async (req: any, res: any) => {
       },
     });
 
+    if (!plan) return res.status(400).json({ message: "Plan not found" });
     credits = plan?.creditsPerCycle;
+
+    if (plan.interval === "MONTHLY") {
+      endDate.setMonth(endDate.getMonth() + 1);
+    } else {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    }
+    expiresAt = endDate;
   } else if (payment.packId) {
     const pack = await prisma.creditPack.findUnique({
       where: {
@@ -128,18 +145,59 @@ export const webhookHandler = async (req: any, res: any) => {
       },
     });
 
+    if (!pack) return res.status(400).json({ message: "Pack not found" });
+
     credits = pack?.credits;
+    expiresAt = pack.validDays
+      ? new Date(Date.now() + pack.validDays * 24 * 60 * 60 * 1000)
+      : null;
   }
+
+  const wallet = payment.user.wallet;
 
   await prisma.$transaction(async (tx) => {
     await tx.creditTransaction.create({
       data: {
-        walletId: payment.user.wallet.id,
+        walletId: wallet.id,
         type: "CREDIT",
         amount: credits,
         reason: payment.planId ? "plan purchase" : "pack purchase",
         expiresAt,
       },
     });
+
+    await tx.wallet.update({
+      where: {
+        id: wallet.id,
+      },
+      data: {
+        balance: { increment: credits },
+      },
+    });
+
+    await tx.payment.update({
+      where: {
+        id: payment.id,
+      },
+      data: {
+        status: "SUCCESS",
+      },
+    });
+
+    if (payment.planId) {
+      await tx.userSubscription.create({
+        data: {
+          userId: payment.user.id,
+          planId: payment.planId,
+          status: "ACTIVE",
+          startDate: new Date(),
+          endDate,
+        },
+      });
+    }
+  });
+
+  return res.status(200).json({
+    message: "Payment processed",
   });
 };

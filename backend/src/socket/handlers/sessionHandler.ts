@@ -158,6 +158,83 @@ export function sessionHandler(io: Server, socket: Socket): void {
         questionNumber: questionCount,
       });
 
+      // Credit Deduction logic....
+
+      const deductionExists = await redis.exists(
+        `credit:deducted:${sessionId}`
+      );
+      if (deductionExists) {
+        console.log(
+          `[credit deduction] already deducted for session=${sessionId}`
+        );
+      } else {
+        try {
+          const session = await prisma.session.findUnique({
+            where: {
+              id: sessionId,
+            },
+            include: {
+              user: {
+                include: { wallet: true },
+              },
+              mockInterview: true,
+            },
+          });
+
+          if (!session) {
+            io.to(sessionId).emit("interview:error", {
+              message: "user not found",
+            });
+            return;
+          }
+
+          if (!session.user.wallet) {
+            console.error("[credit deduction] wallet not found");
+            return;
+          }
+
+          const walletId = session.user.wallet.id;
+
+          await prisma.$transaction(async (tx) => {
+            await tx.wallet.update({
+              where: {
+                id: session?.user.wallet?.id,
+              },
+              data: {
+                balance: {
+                  decrement: 1,
+                },
+              },
+            });
+
+            await tx.creditTransaction.create({
+              data: {
+                walletId,
+                type: "DEBIT",
+                amount: 1,
+                reason: "interview started",
+                sessionId,
+              },
+            });
+
+            await tx.mockInterview.update({
+              where: {
+                id: session?.mockInterviewId,
+              },
+              data: {
+                creditUsed: true,
+              },
+            });
+          });
+
+          await redis.set(`credit:deducted:${sessionId}`, "true", {
+            EX: 86400,
+          });
+        } catch (error) {
+          console.error("[credit deduction error]", error);
+        }
+      }
+
       await prisma.session.update({
         where: {
           id: sessionId,

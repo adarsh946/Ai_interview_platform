@@ -6,6 +6,9 @@
   "scripts": {
     "server": " tsc -b && node dist/index.js"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

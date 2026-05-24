@@ -201,3 +201,28 @@ export const webhookHandler = async (req: any, res: any) => {
     message: "Payment processed",
   });
 };
+
+export const getPlans = async (req: any, res: any) => {
+  try {
+    const plans = await prisma.subscriptionPlan.findMany({
+      where: { active: true },
+    });
+    return res.status(200).json({ plans });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getPacks = async (req: any, res: any) => {
+  try {
+    const packs = await prisma.creditPack.findMany({
+      where: { active: true },
+    });
+
+    return res.status(200).json({ packs });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

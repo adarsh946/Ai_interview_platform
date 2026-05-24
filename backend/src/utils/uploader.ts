@@ -5,8 +5,7 @@ import { s3 } from "../config/s3.js";
 export const uploadResume = multer({
   storage: multerS3({
     s3,
-    bucket: process.env.S3_BUCKET!,
-    acl: "private",
+    bucket: process.env.AWS_BUCKET_NAME!!,
     key: (req, file, cb) => {
       cb(null, `resumes/${Date.now()}-${file.originalname}`);
     },

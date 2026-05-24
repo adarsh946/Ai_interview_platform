@@ -3,6 +3,8 @@ import express from "express";
 import useMiddleware from "../middlewares/middleware.js";
 import {
   createOrder,
+  getPacks,
+  getPlans,
   webhookHandler,
 } from "../controllers/payment.controller.js";
 
@@ -14,5 +16,7 @@ route.post(
   express.raw({ type: "application/json" }),
   webhookHandler
 );
+route.get("/plans", getPlans);
+route.get("/packs", getPacks);
 
 export default route;

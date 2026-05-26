@@ -226,3 +226,19 @@ export const getPacks = async (req: any, res: any) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getWalletBalance = async (req: any, res: any) => {
+  const userId = req.user.id;
+
+  const wallet = await prisma.wallet.findUnique({
+    where: {
+      userId,
+    },
+  });
+
+  if (!wallet) {
+    return res.status(403).json({
+      message: "No credits available",
+    });
+  }
+};

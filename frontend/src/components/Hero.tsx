@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 
 const Hero = () => {
   return (
-    <div className="mx-auto mt-30 flex flex-col items-center w-full">
+    <div className="mx-auto mt-30 flex flex-col items-center w-full min-h-screen ">
       <div className="flex flex-col">
         <h1 className="font-medium tracking-tighter text-7xl text-center">
           Ace Your Next Interview <br />{" "}

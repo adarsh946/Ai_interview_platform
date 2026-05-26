@@ -228,17 +228,48 @@ export const getPacks = async (req: any, res: any) => {
 };
 
 export const getWalletBalance = async (req: any, res: any) => {
-  const userId = req.user.id;
+  try {
+    const userId = req.user?.id;
 
-  const wallet = await prisma.wallet.findUnique({
-    where: {
-      userId,
-    },
-  });
-
-  if (!wallet) {
-    return res.status(403).json({
-      message: "No credits available",
+    const wallet = await prisma.wallet.findUnique({
+      where: {
+        userId,
+      },
     });
+
+    if (!wallet) {
+      return res.status(403).json({
+        message: "No credits available",
+      });
+    }
+
+    const totalCredits = await prisma.creditTransaction.aggregate({
+      _sum: { amount: true },
+      where: {
+        walletId: wallet.id,
+        type: "CREDIT",
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+    });
+
+    const totalDebits = await prisma.creditTransaction.aggregate({
+      _sum: { amount: true },
+      where: {
+        walletId: wallet.id,
+        type: "DEBIT",
+      },
+    });
+
+    const credits = totalCredits._sum.amount ?? 0;
+    const debits = totalDebits._sum.amount ?? 0;
+
+    const spendable = credits - debits;
+
+    return res.status(200).json({
+      balance: spendable,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

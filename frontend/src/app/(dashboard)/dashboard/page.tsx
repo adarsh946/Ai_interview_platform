@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Calendar,
   TrendingUp,
+  Coins,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -253,6 +254,7 @@ function SkeletonCard() {
 export default function Page() {
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   const user = useAuthStore((state) => state.user);
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
@@ -279,6 +281,18 @@ export default function Page() {
       }
     };
     fetchInterviews();
+  }, []);
+
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const { data } = await api.get("/payment/wallet");
+        setWalletBalance(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchWalletBalance();
   }, []);
 
   // ── Derived stats
@@ -323,7 +337,7 @@ export default function Page() {
         </div>
 
         {/* ── Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           <StatCard
             icon={<BarChart2 size={20} className="text-emerald-600" />}
             label="Total Interviews"
@@ -340,6 +354,12 @@ export default function Page() {
             icon={<TrendingUp size={20} className="text-emerald-600" />}
             label="Average Score"
             value={averageScore}
+            accent="bg-emerald-50 border border-emerald-100"
+          />
+          <StatCard
+            icon={<Coins size={20} className="text-emerald-600" />}
+            label="Credits Left"
+            value={walletBalance ?? "..."}
             accent="bg-emerald-50 border border-emerald-100"
           />
         </div>

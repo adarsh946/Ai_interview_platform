@@ -1,5 +1,7 @@
-// @ts-ignore
-import pdfParse from "pdf-parse";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 export async function extractResumeText(fileBuffer: Buffer): Promise<string> {
   try {

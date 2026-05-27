@@ -10,7 +10,7 @@ import passport from "passport";
 import { redis } from "./config/redis.js";
 import { createServer } from "http";
 import { initializeSocket } from "./socket/index.js";
-import "./workers/resumeWorker.js";
+import "./worker/resumeWorker.js";
 
 dotenv.config();
 
@@ -43,5 +43,5 @@ const httpServer = createServer(app);
 initializeSocket(httpServer);
 
 httpServer.listen(process.env.PORT || 3000, () => {
-  console.log(`🚀 Server running on port ${process.env.PORT}`);
+  console.log(` Server running on port ${process.env.PORT}`);
 });

@@ -23,7 +23,7 @@ export function buildQuestionGeneratorPrompt(
       ? "This is the first question — no questions have been asked yet."
       : transcript
           .map(
-            (entry, i) =>
+            (entry: any, i: number) =>
               `Q${i + 1}: ${entry.question}\nA${i + 1}: ${entry.answer}`
           )
           .join("\n\n");
@@ -147,7 +147,7 @@ export function buildResultGeneratorPrompt(state: InterviewStateType): string {
   const averageScore =
     transcript.length > 0
       ? (
-          transcript.reduce((sum, entry) => sum + entry.score, 0) /
+          transcript.reduce((sum: number, entry: any) => sum + entry.score, 0) /
           transcript.length
         ).toFixed(1)
       : "0.0";
@@ -156,7 +156,7 @@ export function buildResultGeneratorPrompt(state: InterviewStateType): string {
 
   const formattedTranscript = transcript
     .map(
-      (entry, i) => `Q${i + 1}: ${entry.question}
+      (entry: any, i: number) => `Q${i + 1}: ${entry.question}
 A${i + 1}: ${entry.answer}
 Evaluation: ${entry.evaluation}
 Score: ${entry.score}/10`

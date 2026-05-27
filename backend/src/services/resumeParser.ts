@@ -1,8 +1,9 @@
+// @ts-ignore
 import pdfParse from "pdf-parse";
 
-export function extractResumeText(fileBuffer: Buffer): Promise<string> {
+export async function extractResumeText(fileBuffer: Buffer): Promise<string> {
   try {
-    const result = pdfParse(fileBuffer);
+    const result = await pdfParse(fileBuffer);
     if (!result.text || result.text.trim().length < 50) {
       throw new Error("Resume content is too short or unreadable");
     }

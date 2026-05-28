@@ -1,8 +1,13 @@
 export const redisConnection = {
-  host: process.env.UPSTASH_REDIS_HOST,
+  host: process.env.UPSTASH_REDIS_HOST!,
   port: parseInt(process.env.UPSTASH_REDIS_PORT || "6379"),
-  password: process.env.UPSTASH_REDIS_PASSWORD,
+  password: process.env.UPSTASH_REDIS_PASSWORD!,
   tls: {
     rejectUnauthorized: false,
+  },
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false, // add this
+  retryStrategy: (times: number) => {
+    return Math.min(times * 100, 3000);
   },
 };

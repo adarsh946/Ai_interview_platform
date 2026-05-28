@@ -4,9 +4,6 @@ import { InterviewStateType } from "../state.js";
 import { buildResultGeneratorPrompt } from "../prompt.js";
 import { HumanMessage } from "@langchain/core/messages";
 
-const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
-const structuredLLM = llm.withStructuredOutput(ResultSchema);
-
 /**
  * Result Generator node — runs once at the very end of the interview.
  *
@@ -16,6 +13,8 @@ const structuredLLM = llm.withStructuredOutput(ResultSchema);
 export async function resultGeneratorNode(
   state: InterviewStateType
 ): Promise<Partial<InterviewStateType>> {
+  const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
+  const structuredLLM = llm.withStructuredOutput(ResultSchema);
   const prompt = buildResultGeneratorPrompt(state);
   const result = await structuredLLM.invoke([new HumanMessage(prompt)]);
 

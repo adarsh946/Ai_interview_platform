@@ -3,11 +3,6 @@ import { buildQuestionGeneratorPrompt } from "../prompt.js";
 import { InterviewStateType } from "../state.js";
 import { HumanMessage } from "@langchain/core/messages";
 
-const llm = new ChatOpenAI({
-  modelName: "gpt-4o-mini",
-  temperature: 0.7,
-});
-
 /**
  * Question Generator node — generates the next interview question.
  *
@@ -22,6 +17,11 @@ const llm = new ChatOpenAI({
 export async function questionGeneratorNode(
   state: InterviewStateType
 ): Promise<Partial<InterviewStateType>> {
+  const llm = new ChatOpenAI({
+    modelName: "gpt-4o-mini",
+    temperature: 0.7,
+  });
+
   const { followUpNeeded, questionCount } = state;
 
   const prompt = buildQuestionGeneratorPrompt(state);

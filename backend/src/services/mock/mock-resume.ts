@@ -39,11 +39,11 @@ export const createMockService = async (req: any, res: any) => {
       resumeUrl,
     });
 
-    return res.status(200).json({
-      message: "Resume uploaded successfully. Processing started.",
+    return {
+      message: "Resume uploaded successfully.",
       interviewId: interview.id,
       status: "processing",
-    });
+    };
   } catch (error) {
     console.error(error);
     return res.status(500).json({

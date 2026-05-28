@@ -3,7 +3,7 @@
 import api from "@/lib/api";
 import socket from "@/lib/socket";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 
 import {
   Camera,
@@ -85,8 +85,8 @@ interface MockInterview {
   resumeText: string | null;
 }
 
-function Page({ params }: { params: { mockInterviewId: string } }) {
-  const { mockInterviewId } = params;
+function Page({ params }: { params: Promise<{ mockInterviewId: string }> }) {
+  const { mockInterviewId } = use(params);
 
   const [cameraReady, setCameraReady] = useState<boolean>(false);
   const [micReady, setMicReady] = useState<boolean>(false);

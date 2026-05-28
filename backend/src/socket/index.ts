@@ -1,7 +1,10 @@
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
+console.log("socket 1 - socket.io imported");
 import { frameHandler } from "./handlers/frameHandler.js";
+console.log("socket 2 - frameHandler imported");
 import { sessionHandler } from "./handlers/sessionHandler.js";
+console.log("socket 3 - sessionHandler imported");
 
 export function initializeSocket(httpServer: HttpServer): Server {
   const io = new Server(httpServer, {

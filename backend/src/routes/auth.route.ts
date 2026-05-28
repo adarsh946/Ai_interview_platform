@@ -24,10 +24,14 @@ route.get(
   passport.authenticate("google", { failureRedirect: "/login" }),
   (req, res) => {
     const user = req.user as { id: string };
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
       expiresIn: "7d",
     });
-    res.cookie("token", token, { httpOnly: true, secure: true }); // safer
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, // false for localhost
+      sameSite: "lax",
+    }); // safer
     res.redirect(process.env.FRONTEND_URL + "/dashboard");
   }
 );
@@ -43,10 +47,14 @@ route.get(
   passport.authenticate("github", { failureRedirect: "/login" }),
   (req, res) => {
     const user = req.user as { id: string };
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
       expiresIn: "7d",
     });
-    res.cookie("token", token, { httpOnly: true, secure: true });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, // false for localhost
+      sameSite: "lax",
+    });
     res.redirect(process.env.FRONTEND_URL + "/dashboard");
   }
 );

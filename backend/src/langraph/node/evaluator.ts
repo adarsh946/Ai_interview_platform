@@ -4,9 +4,6 @@ import { buildEvaluatorPrompt } from "../prompt.js";
 import { InterviewStateType } from "../state.js";
 import { HumanMessage } from "@langchain/core/messages";
 
-const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
-const structuredLLM = llm.withStructuredOutput(EvaluationSchema);
-
 /**
  * Evaluator node — scores the candidate's latest answer.
  *
@@ -20,6 +17,8 @@ const structuredLLM = llm.withStructuredOutput(EvaluationSchema);
 export async function evaluatorNode(
   state: InterviewStateType
 ): Promise<Partial<InterviewStateType>> {
+  const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
+  const structuredLLM = llm.withStructuredOutput(EvaluationSchema);
   const { currentQuestion, currentAnswer } = state;
 
   const prompt = buildEvaluatorPrompt(state);

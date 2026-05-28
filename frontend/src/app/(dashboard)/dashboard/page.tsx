@@ -287,7 +287,7 @@ export default function Page() {
     const fetchWalletBalance = async () => {
       try {
         const { data } = await api.get("/payment/wallet");
-        setWalletBalance(data);
+        setWalletBalance(data.balance);
       } catch (err) {
         console.error(err);
       }

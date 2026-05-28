@@ -1,9 +1,10 @@
 import { Server, Socket } from "socket.io";
 import prisma from "../../prisma/prisma.js";
-import { interviewGraph } from "../../langraph/interviewGraph.js";
+// import { interviewGraph } from "../../langraph/interviewGraph.js";
 import { Command } from "@langchain/langgraph";
 import { redis } from "../../config/redis.js";
 import { textToSpeech } from "../../services/tts.js";
+import { getInterviewGraph } from "../../globals.js";
 
 interface JoinPayload {
   sessionId: string;
@@ -39,6 +40,7 @@ async function cleanupSession(sessionId: string): Promise<void> {
 }
 
 export function sessionHandler(io: Server, socket: Socket): void {
+  const interviewGraph = getInterviewGraph();
   // Event 1 session: join
 
   socket.on("session:join", async (payload: JoinPayload) => {

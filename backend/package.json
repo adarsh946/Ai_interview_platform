@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "postinstall": "prisma generate",
-    "server": " tsc -b && node dist/index.js",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "server": "tsc -b && node --env-file=.env dist/index.js",
+    "start": "node --env-file=.env dist/index.js",
+    "dev": "tsx --env-file=.env src/index.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -26,14 +26,14 @@
     "@langchain/redis": "^1.1.0",
     "@prisma/client": "^6.19.3",
     "@types/bcrypt": "^6.0.0",
-    "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.63.2",
     "cookie-parser": "^1.4.7",
-    "dotenv": "^17.2.1",
+    "cors": "^2.8.6",
     "express": "^5.1.0",
+    "ioredis": "^5.11.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "multer-s3": "^3.0.1",
@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.9",
+    "@types/cors": "^2.8.19",
     "@types/multer": "^2.0.0",
     "@types/multer-s3": "^3.0.3",
     "@types/node": "^24.12.4",

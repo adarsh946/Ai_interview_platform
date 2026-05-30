@@ -1,7 +1,8 @@
-import { ChatOpenAI } from "@langchain/openai";
+// import { ChatOpenAI } from "@langchain/openai";
 import { buildQuestionGeneratorPrompt } from "../prompt.js";
 import { InterviewStateType } from "../state.js";
 import { HumanMessage } from "@langchain/core/messages";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 /**
  * Question Generator node — generates the next interview question.
@@ -17,9 +18,14 @@ import { HumanMessage } from "@langchain/core/messages";
 export async function questionGeneratorNode(
   state: InterviewStateType
 ): Promise<Partial<InterviewStateType>> {
-  const llm = new ChatOpenAI({
-    modelName: "gpt-4o-mini",
-    temperature: 0.7,
+  // const llm = new ChatOpenAI({
+  //   modelName: "gpt-4o-mini",
+  //   temperature: 0.7,
+  // });
+
+  const llm = new ChatGoogleGenerativeAI({
+    model: "gemini-1.5-flash",
+    apiKey: process.env.GOOGLE_AI_API_KEY,
   });
 
   const { followUpNeeded, questionCount } = state;

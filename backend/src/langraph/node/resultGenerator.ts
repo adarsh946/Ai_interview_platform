@@ -1,8 +1,9 @@
-import { ChatOpenAI } from "@langchain/openai";
+// import { ChatOpenAI } from "@langchain/openai";
 import { ResultSchema } from "../../types/schema.js";
 import { InterviewStateType } from "../state.js";
 import { buildResultGeneratorPrompt } from "../prompt.js";
 import { HumanMessage } from "@langchain/core/messages";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 /**
  * Result Generator node — runs once at the very end of the interview.
@@ -13,7 +14,12 @@ import { HumanMessage } from "@langchain/core/messages";
 export async function resultGeneratorNode(
   state: InterviewStateType
 ): Promise<Partial<InterviewStateType>> {
-  const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
+  // const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
+
+  const llm = new ChatGoogleGenerativeAI({
+    model: "gemini-1.5-flash",
+    apiKey: process.env.GOOGLE_AI_API_KEY,
+  });
   const structuredLLM = llm.withStructuredOutput(ResultSchema);
   const prompt = buildResultGeneratorPrompt(state);
   const result = await structuredLLM.invoke([new HumanMessage(prompt)]);

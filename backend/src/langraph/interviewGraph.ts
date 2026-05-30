@@ -1,4 +1,4 @@
-import { END, START, StateGraph } from "@langchain/langgraph";
+import { END, MemorySaver, START, StateGraph } from "@langchain/langgraph";
 import { InterviewState } from "./state.js";
 import { evaluatorNode } from "./node/evaluator.js";
 import { initializerNode } from "./node/initializer.js";
@@ -69,7 +69,7 @@ await checkpointRedis.connect();
 // });
 
 export function createInterviewGraph() {
-  const checkpointer = new RedisSaver(checkpointRedis as any);
+  const checkpointer = new MemorySaver();
   const workflow = new StateGraph(InterviewState);
 
   // All nodes...

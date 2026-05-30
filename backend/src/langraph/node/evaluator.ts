@@ -1,8 +1,9 @@
-import { ChatOpenAI } from "@langchain/openai";
+// import { ChatOpenAI } from "@langchain/openai";
 import { EvaluationSchema } from "../../types/schema.js";
 import { buildEvaluatorPrompt } from "../prompt.js";
 import { InterviewStateType } from "../state.js";
 import { HumanMessage } from "@langchain/core/messages";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 /**
  * Evaluator node — scores the candidate's latest answer.
@@ -17,8 +18,14 @@ import { HumanMessage } from "@langchain/core/messages";
 export async function evaluatorNode(
   state: InterviewStateType
 ): Promise<Partial<InterviewStateType>> {
-  const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
+  // const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
+
+  const llm = new ChatGoogleGenerativeAI({
+    model: "gemini-1.5-flash",
+    apiKey: process.env.GOOGLE_AI_API_KEY,
+  });
   const structuredLLM = llm.withStructuredOutput(EvaluationSchema);
+
   const { currentQuestion, currentAnswer } = state;
 
   const prompt = buildEvaluatorPrompt(state);

@@ -21,7 +21,8 @@ function startResumeWorker() {
       }
 
       const bucketName = process.env.AWS_BUCKET_NAME!;
-      const key = resumeUrl.split(".amazonaws.com/")[1]; // extract key from URL
+      const key = decodeURIComponent(resumeUrl.split(".amazonaws.com/")[1]);
+      console.log("[resumeWorker] decoded key:", key);
 
       const command = new GetObjectCommand({
         Bucket: bucketName,

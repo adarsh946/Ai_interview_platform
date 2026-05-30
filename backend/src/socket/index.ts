@@ -9,10 +9,12 @@ console.log("socket 3 - sessionHandler imported");
 export function initializeSocket(httpServer: HttpServer): Server {
   const io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+      origin: process.env.FRONTEND_URL || "http://localhost:3000",
       methods: ["GET", "POST"],
       credentials: true,
     },
+    transports: ["websocket", "polling"],
+    allowEIO3: true,
   });
 
   io.on("connection", (socket: Socket) => {

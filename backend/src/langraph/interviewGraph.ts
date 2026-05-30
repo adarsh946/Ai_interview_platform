@@ -1,21 +1,21 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
-console.log("1 - langgraph imported");
 import { InterviewState } from "./state.js";
-console.log("2 - state imported");
 import { evaluatorNode } from "./node/evaluator.js";
-console.log("3 - evaluator imported");
 import { initializerNode } from "./node/initializer.js";
-console.log("4 - initializer imported");
 import { questionGeneratorNode } from "./node/questionGeneration.js";
-console.log("5 - questionGenerator imported");
 import { resultGeneratorNode } from "./node/resultGenerator.js";
-console.log("6 - resultGenerator imported");
 import { waitForAnswerNode } from "./node/waitForAnswer.js";
-console.log("7 - waitForAnswer imported");
 import { flowController } from "./node/flowController.js";
-console.log("8 - flowController imported");
-import { MemorySaver } from "@langchain/langgraph";
-console.log("9 - MemorySaver imported");
+
+import { RedisSaver } from "@langchain/langgraph-checkpoint-redis";
+import { createClient } from "redis";
+
+// Create separate redis client for LangGraph
+const checkpointRedis = createClient({
+  url: process.env.UPSTASH_REDIS_URL, // rediss:// format
+});
+
+await checkpointRedis.connect();
 
 // // RedisSaver persists state between interrupts so the graph can resume
 // // across socket reconnects or server restarts
@@ -69,7 +69,7 @@ console.log("9 - MemorySaver imported");
 // });
 
 export function createInterviewGraph() {
-  const checkpointer = new MemorySaver();
+  const checkpointer = new RedisSaver(checkpointRedis as any);
   const workflow = new StateGraph(InterviewState);
 
   // All nodes...

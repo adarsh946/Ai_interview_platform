@@ -2,6 +2,8 @@ import { Job, Worker } from "bullmq";
 import { extractResumeText } from "../services/resumeParser.js";
 import prisma from "../prisma/prisma.js";
 import { redisConnection } from "../config/redisConnection.js";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { s3 } from "../config/s3.js";
 
 console.log("worker - before worker creation");
 function startResumeWorker() {
@@ -18,12 +20,20 @@ function startResumeWorker() {
         throw new Error("Interview id or Resume url not found!");
       }
 
-      const response = await fetch(resumeUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to download resume: ${response.statusText}`);
-      }
+      const bucketName = process.env.AWS_BUCKET_NAME!;
+      const key = resumeUrl.split(".amazonaws.com/")[1]; // extract key from URL
 
-      const buffer = Buffer.from(await response.arrayBuffer());
+      const command = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      });
+
+      const s3Response = await s3.send(command);
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of s3Response.Body as any) {
+        chunks.push(chunk);
+      }
+      const buffer = Buffer.concat(chunks);
       const extractedText = await extractResumeText(buffer);
 
       await prisma.mockInterview.update({

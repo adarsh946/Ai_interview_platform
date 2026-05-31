@@ -17,7 +17,7 @@ export async function resultGeneratorNode(
   // const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
 
   const llm = new ChatGoogleGenerativeAI({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash",
     apiKey: process.env.GOOGLE_AI_API_KEY,
   });
   const structuredLLM = llm.withStructuredOutput(ResultSchema);

@@ -3,7 +3,7 @@
 import socket from "@/lib/socket";
 import { Mic, MicOff, Phone, Video, VideoOff, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, use } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,8 +63,8 @@ function getStatusLabel(status: InterviewStatus): string {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-function Page({ params }: { params: { sessionId: string } }) {
-  const { sessionId } = params;
+function Page({ params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = use(params);
   const router = useRouter();
 
   // ── UI State
@@ -91,6 +91,53 @@ function Page({ params }: { params: { sessionId: string } }) {
   // refs for stale closure fix
   const currentAnswerRef = useRef<string>("");
   const currentQuestionRef = useRef<string>("");
+  // Add this ref at the top of your component with other refs:
+  const interviewStartedRef = useRef(false);
+
+  // Then in your first useEffect:
+  useEffect(() => {
+    // Prevent double execution
+    if (interviewStartedRef.current) return;
+    interviewStartedRef.current = true;
+
+    const stored = sessionStorage.getItem("interviewPayload");
+    console.log("[room] stored payload exists:", !!stored);
+
+    if (!stored) {
+      console.log("[room] NO PAYLOAD — not emitting");
+      return;
+    }
+
+    const payload = JSON.parse(stored);
+    sessionStorage.removeItem("interviewPayload");
+
+    console.log("[room] connecting socket...");
+
+    socket.connect();
+    console.log("[room] socket.connect() called");
+
+    socket.once("connect", () => {
+      console.log("[room] socket connected!");
+      console.log("[room] emitting session:join for:", payload.sessionId);
+      socket.emit("session:join", { sessionId: payload.sessionId });
+    });
+
+    socket.once("interview:status", (data) => {
+      console.log("[room] interview:status received:", data);
+      if (data.status === "joined") {
+        console.log("[room] emitting interview:start");
+        socket.emit("interview:start", payload);
+      }
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("[room] connect error:", err.message);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("[room] disconnected:", reason);
+    });
+  }, []);
 
   // ─── Auto scroll chat to bottom ───────────────────────────────────────────
 
@@ -233,6 +280,26 @@ function Page({ params }: { params: { sessionId: string } }) {
     [handleEndInterview]
   );
 
+  useEffect(() => {
+    // Get payload stored by setup page
+    const stored = sessionStorage.getItem("interviewPayload");
+    if (!stored) return;
+
+    const payload = JSON.parse(stored);
+    sessionStorage.removeItem("interviewPayload");
+
+    // If socket disconnected during navigation, reconnect
+    if (!socket.connected) {
+      socket.connect();
+      socket.on("connect", () => {
+        socket.emit("interview:start", payload);
+      });
+    } else {
+      // Already connected — emit directly
+      socket.emit("interview:start", payload);
+    }
+  }, []);
+
   // ─── Socket Events ─────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -268,7 +335,12 @@ function Page({ params }: { params: { sessionId: string } }) {
       }
       if (payload.status === "starting") {
         setStatus("starting");
-        startTimer(30 * 60);
+        // Fix — use actual duration not hardcoded 30
+        const duration = parseInt(
+          sessionStorage.getItem("interviewDuration") || "30"
+        );
+        sessionStorage.removeItem("interviewDuration");
+        startTimer(duration * 60);
       }
       if (payload.status === "cancelled") {
         setStatus("cancelled");

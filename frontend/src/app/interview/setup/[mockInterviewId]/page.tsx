@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/api";
-import socket from "@/lib/socket";
+// import socket from "@/lib/socket";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useRef, useState } from "react";
 
@@ -153,7 +153,7 @@ function Page({ params }: { params: Promise<{ mockInterviewId: string }> }) {
   const handleStartInterview = async () => {
     if (!mockInterview) {
       setError("Interview details not loaded. Please refresh.");
-      return; //  stop here
+      return;
     }
 
     setIsLoading(true);
@@ -164,32 +164,34 @@ function Page({ params }: { params: Promise<{ mockInterviewId: string }> }) {
       });
       const sessionId = response.data.sessionId;
 
-      socket.connect();
+      // Store payload for room page
+      sessionStorage.setItem(
+        "interviewPayload",
+        JSON.stringify({
+          sessionId,
+          role: mockInterview.role,
+          round: mockInterview.round,
+          difficulty: mockInterview.difficulty,
+          duration: mockInterview.duration,
+          skills: mockInterview.skills,
+          resumeText: mockInterview.resumeText,
+        })
+      );
 
-      socket.emit("session:join", { sessionId });
+      sessionStorage.setItem(
+        "interviewDuration",
+        String(mockInterview.duration)
+      );
 
-      socket.on("interview:status", (data) => {
-        if (data.status === "joined") {
-          socket.emit("interview:start", {
-            sessionId,
-            role: mockInterview.role,
-            round: mockInterview.round,
-            difficulty: mockInterview.difficulty,
-            duration: mockInterview.duration,
-            skills: mockInterview.skills,
-            resumeText: mockInterview.resumeText,
-          });
-          router.push(`/interview/room/${sessionId}`);
-        }
-      });
+      // Just redirect — room page handles all socket logic
+      router.push(`/interview/room/${sessionId}`);
     } catch (err) {
       setError("Something went wrong. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };
 
-  const allCheckReady = cameraReady && micReady && audioReady;
+  const allCheckReady = cameraReady && micReady; // && audioReady;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 py-10 px-4">

@@ -91,8 +91,8 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
   // refs for stale closure fix
   const currentAnswerRef = useRef<string>("");
   const currentQuestionRef = useRef<string>("");
-  // Add this ref at the top of your component with other refs:
   const interviewStartedRef = useRef(false);
+  const serverStoppedRecognitionRef = useRef(false);
 
   // Then in your first useEffect:
   useEffect(() => {
@@ -215,6 +215,10 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
 
     recognition.onend = () => {
       setIsMicActive(false);
+      if (serverStoppedRecognitionRef.current) {
+        serverStoppedRecognitionRef.current = false; // reset for next time
+        return; // server stopped it, don't submit again
+      }
       submitAnswer();
     };
 
@@ -255,12 +259,12 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     clearInterval(timerRef.current!);
     recognitionRef.current?.stop();
     audioRef.current?.pause();
-    socket.emit("interview:cancel", {
+    serverStoppedRecognitionRef.current = true;
+    socket.emit("interview:end-early", {
       sessionId,
-      reason: "User ended interview",
+      reason: "User ended interview early",
     });
-    router.push("/dashboard");
-  }, [sessionId, router]);
+  }, [sessionId]);
 
   const startTimer = useCallback(
     (durationInSeconds: number) => {
@@ -279,26 +283,6 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     },
     [handleEndInterview]
   );
-
-  useEffect(() => {
-    // Get payload stored by setup page
-    const stored = sessionStorage.getItem("interviewPayload");
-    if (!stored) return;
-
-    const payload = JSON.parse(stored);
-    sessionStorage.removeItem("interviewPayload");
-
-    // If socket disconnected during navigation, reconnect
-    if (!socket.connected) {
-      socket.connect();
-      socket.on("connect", () => {
-        socket.emit("interview:start", payload);
-      });
-    } else {
-      // Already connected — emit directly
-      socket.emit("interview:start", payload);
-    }
-  }, []);
 
   // ─── Socket Events ─────────────────────────────────────────────────────────
 
@@ -331,6 +315,7 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     socket.on("interview:status", (payload: StatusPayload) => {
       if (payload.status === "processing") {
         setStatus("processing");
+        serverStoppedRecognitionRef.current = true;
         recognitionRef.current?.stop();
       }
       if (payload.status === "starting") {
@@ -350,6 +335,7 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     });
 
     socket.on("interview:complete", (_payload: CompletePayload) => {
+      console.log("[complete] fired, sessionId:", sessionId);
       setStatus("done");
       clearInterval(timerRef.current!);
       recognitionRef.current?.stop();

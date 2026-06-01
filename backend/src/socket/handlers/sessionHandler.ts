@@ -5,6 +5,7 @@ import { Command } from "@langchain/langgraph";
 import { redis } from "../../config/redis.js";
 import { textToSpeech } from "../../services/tts.js";
 import { getInterviewGraph } from "../../globals.js";
+import { resultGeneratorNode } from "../../langraph/node/resultGenerator.js";
 
 interface JoinPayload {
   sessionId: string;
@@ -386,6 +387,82 @@ export function sessionHandler(io: Server, socket: Socket): void {
     } catch (err) {
       console.error("[sessionHandler] interview:cancel error:", err);
       socket.emit("interview:error", { message: "Failed to cancel interview" });
+    }
+  });
+
+  socket.on("interview:end-early", async (payload: CancelPayload) => {
+    const { sessionId } = payload;
+
+    if (!sessionId) {
+      socket.emit("interview:error", { message: "sessionId is required" });
+      return;
+    }
+
+    try {
+      console.log(`[sessionHandler] early end requested session=${sessionId}`);
+
+      // Get current graph state — has partial transcript
+      const graphState = await interviewGraph.getState({
+        configurable: { thread_id: sessionId },
+      });
+
+      const transcript = graphState.values.transcript as any[];
+
+      if (!transcript || transcript.length === 0) {
+        await prisma.session.update({
+          where: {
+            id: sessionId,
+          },
+          data: {
+            status: "CANCELLED",
+            cancelledAt: new Date(),
+          },
+        });
+        socket.emit("interview:status", { status: "cancelled" });
+        return;
+      }
+
+      const result = await resultGeneratorNode(graphState.values as any);
+
+      const rawExpression = await redis.get(
+        `interview:expressions:${sessionId}`
+      );
+      const expressions = rawExpression ? JSON.parse(rawExpression) : [];
+
+      const finalResult = {
+        overallScore: result.overallScore as number,
+        overallFeedback: result.overallFeedback as string,
+        strengths: result.strengths as string[],
+        improvements: result.improvements as string[],
+        transcript,
+        expressions,
+      };
+
+      await prisma.result.create({
+        data: {
+          sessionId,
+          transcript: JSON.stringify(finalResult.transcript),
+          overallScore: Math.round(finalResult.overallScore),
+          overallFeedback: finalResult.overallFeedback,
+          strengths: finalResult.strengths,
+          improvements: finalResult.improvements,
+          expressions: finalResult.expressions,
+          screenshots: undefined,
+        },
+      });
+
+      await prisma.session.update({
+        where: { id: sessionId },
+        data: { status: "COMPLETED", completedAt: new Date() },
+      });
+      io.to(sessionId).emit("interview:complete", finalResult);
+
+      await cleanupSession(sessionId);
+
+      console.log(`[sessionHandler] early end complete session=${sessionId}`);
+    } catch (err) {
+      console.error("[sessionHandler] interview:end-early error:", err);
+      socket.emit("interview:error", { message: "Failed to end interview" });
     }
   });
 }

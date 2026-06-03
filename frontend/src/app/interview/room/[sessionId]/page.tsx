@@ -93,6 +93,7 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
   const currentQuestionRef = useRef<string>("");
   const interviewStartedRef = useRef(false);
   const serverStoppedRecognitionRef = useRef(false);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Then in your first useEffect:
   useEffect(() => {
@@ -109,6 +110,7 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     }
 
     const payload = JSON.parse(stored);
+    console.log("[room] payload:", payload);
     sessionStorage.removeItem("interviewPayload");
 
     console.log("[room] connecting socket...");
@@ -208,12 +210,28 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
 
       if (finalTranscript) {
         currentAnswerRef.current += finalTranscript;
+
+        // ── Silence detection ──────────────────────────────
+        // Clear any existing silence timer
+        if (silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current);
+        }
+        // Start fresh 2 second timer — if no more final results arrive,
+        // user has stopped speaking → stop recognition → onend → submitAnswer
+        silenceTimerRef.current = setTimeout(() => {
+          recognition.stop();
+        }, 2000);
       }
     };
 
     recognition.onstart = () => setIsMicActive(true);
 
     recognition.onend = () => {
+      // clear the silence timer if it still runing.
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
       setIsMicActive(false);
       if (serverStoppedRecognitionRef.current) {
         serverStoppedRecognitionRef.current = false; // reset for next time

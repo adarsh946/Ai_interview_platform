@@ -102,16 +102,38 @@ function Page({ params }: { params: Promise<{ mockInterviewId: string }> }) {
   const router = useRouter();
 
   useEffect(() => {
+    let pollInterval: NodeJS.Timeout | null = null;
+
     const fetchInterview = async () => {
       try {
         const { data } = await api.get(`/mock/${mockInterviewId}`);
         setMockInterview(data.interview);
+
+        // If resumeText still null, keep polling every 3 seconds
+        if (!data.interview.resumeText) {
+          pollInterval = setInterval(async () => {
+            try {
+              const { data: fresh } = await api.get(`/mock/${mockInterviewId}`);
+              setMockInterview(fresh.interview);
+              if (fresh.interview.resumeText) {
+                clearInterval(pollInterval!);
+                pollInterval = null;
+              }
+            } catch (err) {
+              clearInterval(pollInterval!);
+            }
+          }, 3000);
+        }
       } catch (err) {
         setError("Failed to load interview details");
       }
     };
 
     fetchInterview();
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, []);
 
   useEffect(() => {
@@ -153,6 +175,14 @@ function Page({ params }: { params: Promise<{ mockInterviewId: string }> }) {
   const handleStartInterview = async () => {
     if (!mockInterview) {
       setError("Interview details not loaded. Please refresh.");
+      return;
+    }
+
+    // ── Guard: resume not processed yet ──────────────────
+    if (!mockInterview.resumeText) {
+      setError(
+        "Your resume is still being processed. Please wait a moment and try again."
+      );
       return;
     }
 
@@ -212,7 +242,6 @@ function Page({ params }: { params: Promise<{ mockInterviewId: string }> }) {
             Make sure your camera and microphone are working before you begin
           </p>
         </div>
-
         {/* ── Two column layout ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left — Camera feed */}
@@ -343,7 +372,6 @@ function Page({ params }: { params: Promise<{ mockInterviewId: string }> }) {
             </div>
           </div>
         </div>
-
         {/* ── Instructions ──────────────────────────────────────────────────── */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-xl shadow-slate-200/50 p-5">
           <div className="flex items-center gap-2 mb-4">
@@ -397,25 +425,37 @@ function Page({ params }: { params: Promise<{ mockInterviewId: string }> }) {
             ))}
           </div>
         </div>
-
-        {/* ── Start button ──────────────────────────────────────────────────── */}
-        <button
-          className="w-full flex items-center justify-center gap-2 py-3.5 px-6 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-2xl transition-colors shadow-lg shadow-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2"
-          onClick={handleStartInterview}
-          disabled={!allCheckReady || isLoading}
-        >
-          {isLoading ? (
-            <>
-              <RefreshCw size={16} className="animate-spin" />
-              Starting...
-            </>
-          ) : (
-            <>
-              Start Interview
-              <ChevronRight size={16} />
-            </>
-          )}
-        </button>
+        /* ── Start button ────────────────────────────────────────────────────
+        */
+        {!mockInterview?.resumeText ? (
+          <div className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-amber-50 border border-amber-200 rounded-2xl">
+            <RefreshCw
+              size={15}
+              className="animate-spin text-amber-500 shrink-0"
+            />
+            <span className="text-sm font-medium text-amber-700">
+              Processing your resume — this takes a few seconds...
+            </span>
+          </div>
+        ) : (
+          <button
+            className="w-full flex items-center justify-center gap-2 py-3.5 px-6 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-2xl transition-colors shadow-lg shadow-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleStartInterview}
+            disabled={!allCheckReady || isLoading}
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw size={16} className="animate-spin" />
+                Starting...
+              </>
+            ) : (
+              <>
+                Start Interview
+                <ChevronRight size={16} />
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

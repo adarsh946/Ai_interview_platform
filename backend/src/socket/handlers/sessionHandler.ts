@@ -325,7 +325,14 @@ export function sessionHandler(io: Server, socket: Socket): void {
         });
         io.to(sessionId).emit("interview:complete", result);
 
-        await cleanupSession(sessionId);
+        try {
+          await cleanupSession(sessionId);
+        } catch (cleanupErr) {
+          console.warn(
+            `[sessionHandler] cleanup failed for session=${sessionId}, continuing anyway:`,
+            cleanupErr
+          );
+        }
 
         console.log(`[sessionHandler] session=${sessionId} status → COMPLETED`);
         return;
@@ -457,7 +464,14 @@ export function sessionHandler(io: Server, socket: Socket): void {
       });
       io.to(sessionId).emit("interview:complete", finalResult);
 
-      await cleanupSession(sessionId);
+      try {
+        await cleanupSession(sessionId);
+      } catch (cleanupErr) {
+        console.warn(
+          `[sessionHandler] cleanup failed for session=${sessionId}, continuing anyway:`,
+          cleanupErr
+        );
+      }
 
       console.log(`[sessionHandler] early end complete session=${sessionId}`);
     } catch (err) {

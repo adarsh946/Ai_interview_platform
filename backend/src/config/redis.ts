@@ -3,18 +3,22 @@ import { createClient } from "redis";
 export const redis = createClient({
   url: process.env.UPSTASH_REDIS_URL,
   socket: {
-    reconnectStrategy: (retries) => {
+    reconnectStrategy: (retries: any) => {
       if (retries > 10) return new Error("Too many retries");
-      return Math.min(retries * 100, 3000); // wait up to 3s between retries
+      return Math.min(retries * 100, 3000);
     },
-    keepAlive: true, // send keepalive every 5s
-  },
+    connectTimeout: 10000,
+    tls: true,
+  } as any,
 });
 
-redis.on("connect", () => console.log("[redis] connected to Upstash"));
+redis.on("connect", () => {
+  console.log("[redis] connected to Upstash");
+  // @ts-ignore
+  redis.socket?.setKeepAlive?.(true, 10000);
+});
 redis.on("error", (err) => console.error("[redis] error:", err.message));
 redis.on("reconnecting", () => console.log("[redis] reconnecting..."));
 
 await redis.connect();
-
 console.log("[redis] connect() completed");

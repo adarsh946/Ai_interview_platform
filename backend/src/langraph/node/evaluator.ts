@@ -1,9 +1,10 @@
 // import { ChatOpenAI } from "@langchain/openai";
+import { ChatGroq } from "@langchain/groq";
 import { EvaluationSchema } from "../../types/schema.js";
 import { buildEvaluatorPrompt } from "../prompt.js";
 import { InterviewStateType } from "../state.js";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+// import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 /**
  * Evaluator node — scores the candidate's latest answer.
@@ -20,9 +21,10 @@ export async function evaluatorNode(
 ): Promise<Partial<InterviewStateType>> {
   // const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
 
-  const llm = new ChatGoogleGenerativeAI({
-    model: "gemini-2.5-flash",
-    apiKey: process.env.GOOGLE_AI_API_KEY,
+  const llm = new ChatGroq({
+    model: "llama-3.3-70b-versatile",
+    apiKey: process.env.GROQ_API_KEY,
+    temperature: 0.7,
   });
   const structuredLLM = llm.withStructuredOutput(EvaluationSchema);
 

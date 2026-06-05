@@ -3,7 +3,8 @@ import { ResultSchema } from "../../types/schema.js";
 import { InterviewStateType } from "../state.js";
 import { buildResultGeneratorPrompt } from "../prompt.js";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+// import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGroq } from "@langchain/groq";
 
 /**
  * Result Generator node — runs once at the very end of the interview.
@@ -16,9 +17,10 @@ export async function resultGeneratorNode(
 ): Promise<Partial<InterviewStateType>> {
   // const llm = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
 
-  const llm = new ChatGoogleGenerativeAI({
-    model: "gemini-2.5-flash",
-    apiKey: process.env.GOOGLE_AI_API_KEY,
+  const llm = new ChatGroq({
+    model: "llama-3.3-70b-versatile",
+    apiKey: process.env.GROQ_API_KEY,
+    temperature: 0.7,
   });
   const structuredLLM = llm.withStructuredOutput(ResultSchema);
   const prompt = buildResultGeneratorPrompt(state);

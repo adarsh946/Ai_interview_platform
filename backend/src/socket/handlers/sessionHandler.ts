@@ -405,6 +405,18 @@ export function sessionHandler(io: Server, socket: Socket): void {
       return;
     }
 
+    // Check if result already exists — prevent duplicate processing
+    const existingResult = await prisma.result.findUnique({
+      where: { sessionId },
+    });
+
+    if (existingResult) {
+      console.log(
+        `[sessionHandler] result already exists for session=${sessionId}, skipping`
+      );
+      return;
+    }
+
     try {
       console.log(`[sessionHandler] early end requested session=${sessionId}`);
 

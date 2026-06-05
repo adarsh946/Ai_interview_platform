@@ -94,6 +94,7 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
   const interviewStartedRef = useRef(false);
   const serverStoppedRecognitionRef = useRef(false);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const interviewEndedRef = useRef(false);
 
   // Then in your first useEffect:
   useEffect(() => {
@@ -274,6 +275,9 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
   // ─── Timer ────────────────────────────────────────────────────────────────
 
   const handleEndInterview = useCallback(() => {
+    if (interviewEndedRef.current) return; // prevent multiple calls
+    interviewEndedRef.current = true;
+
     clearInterval(timerRef.current!);
     recognitionRef.current?.stop();
     audioRef.current?.pause();

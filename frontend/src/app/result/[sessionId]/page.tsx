@@ -1,7 +1,7 @@
 "use client";
 
 import api from "@/lib/api";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 import {
   ArrowLeft,
@@ -42,12 +42,16 @@ interface Result {
   };
 }
 
-export default function Page({ params }: { params: { sessionId: string } }) {
+export default function Page({
+  params,
+}: {
+  params: Promise<{ sessionId: string }>;
+}) {
   const [result, setResult] = useState<Result | null>(null);
   const [expandIndex, setExpandIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { sessionId } = params;
+  const { sessionId } = use(params);
 
   useEffect(() => {
     const fetchResult = async () => {

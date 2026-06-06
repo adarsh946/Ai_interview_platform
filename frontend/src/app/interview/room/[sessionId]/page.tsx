@@ -238,12 +238,37 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
         serverStoppedRecognitionRef.current = false; // reset for next time
         return; // server stopped it, don't submit again
       }
-      submitAnswer();
+      if (interviewEndedRef.current) return;
+
+      // If we have answer text — submit it
+      if (currentAnswerRef.current.trim()) {
+        submitAnswer();
+      } else {
+        // No answer yet — STT stopped unexpectedly, restart it
+        console.log("[recognition] onend with no answer — restarting STT");
+        setTimeout(() => {
+          startListening();
+        }, 500);
+      }
     };
 
     recognition.onerror = (event: any) => {
       console.error("[recognition] error:", event.error);
       setIsMicActive(false);
+
+      // These errors are recoverable — restart listening
+      const recoverableErrors = ["no-speech", "network", "audio-capture"];
+
+      if (
+        recoverableErrors.includes(event.error) &&
+        !serverStoppedRecognitionRef.current &&
+        !interviewEndedRef.current
+      ) {
+        console.log("[recognition] recoverable error — restarting STT");
+        setTimeout(() => {
+          startListening();
+        }, 500); // small delay before restarting
+      }
     };
 
     recognition.start();

@@ -1,9 +1,19 @@
 import { Socket, Server } from "socket.io";
-import { redis } from "../../config/redis.js";
 
 interface FrameCapturePayload {
   sessionId: string;
   expressionData: Record<string, unknown>;
+}
+
+// In-memory store — no Redis needed for expressions
+const expressionStore = new Map<string, Record<string, unknown>[]>();
+
+export function getExpressions(sessionId: string): Record<string, unknown>[] {
+  return expressionStore.get(sessionId) ?? [];
+}
+
+export function clearExpressions(sessionId: string): void {
+  expressionStore.delete(sessionId);
 }
 
 export function frameHandler(io: Server, socket: Socket): void {
@@ -15,29 +25,12 @@ export function frameHandler(io: Server, socket: Socket): void {
       return;
     }
 
-    const key = `interview:expressions:${sessionId}`;
+    const existing = expressionStore.get(sessionId) ?? [];
+    existing.push({ ...expressionData, capturedAt: Date.now() });
+    expressionStore.set(sessionId, existing);
 
-    try {
-      // Get existing expressions array from Redis
-      const existing = await redis.get(key);
-      const expressions: Record<string, unknown>[] = existing
-        ? JSON.parse(existing)
-        : [];
-
-      //  pushing new entry.
-      expressions.push({
-        ...expressionData,
-        capturedAt: Date.now(),
-      });
-
-      // Save back to Redis
-      await redis.set(key, JSON.stringify(expressions), { EX: 86400 });
-
-      console.log(
-        `[frameHandler] session=${sessionId} expressions=${expressions.length}`
-      );
-    } catch (err) {
-      console.error("[frameHandler] failed to store expression data:", err);
-    }
+    console.log(
+      `[frameHandler] session=${sessionId} expressions=${existing.length}`
+    );
   });
 }

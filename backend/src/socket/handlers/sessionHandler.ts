@@ -6,6 +6,8 @@ import { redis } from "../../config/redis.js";
 import { textToSpeech } from "../../services/tts.js";
 import { getInterviewGraph } from "../../globals.js";
 import { resultGeneratorNode } from "../../langraph/node/resultGenerator.js";
+import { clearExpressions, getExpressions } from "./frameHandler.js";
+import { Prisma } from "@prisma/client";
 
 interface JoinPayload {
   sessionId: string;
@@ -34,9 +36,9 @@ interface CancelPayload {
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 async function cleanupSession(sessionId: string): Promise<void> {
-  await redis.del(`interview:expressions:${sessionId}`);
+  clearExpressions(sessionId);
   console.log(
-    `[sessionHandler] cleaned up Redis keys for session=${sessionId}`
+    `[sessionHandler] cleaned up expressions for session=${sessionId}`
   );
 }
 
@@ -163,79 +165,87 @@ export function sessionHandler(io: Server, socket: Socket): void {
 
       // Credit Deduction logic....
 
-      const deductionExists = await redis.exists(
-        `credit:deducted:${sessionId}`
-      );
-      if (deductionExists) {
-        console.log(
-          `[credit deduction] already deducted for session=${sessionId}`
+      try {
+        const deductionExists = await redis.exists(
+          `credit:deducted:${sessionId}`
         );
-      } else {
-        try {
-          const session = await prisma.session.findUnique({
-            where: {
-              id: sessionId,
-            },
-            include: {
-              user: {
-                include: { wallet: true },
-              },
-              mockInterview: true,
-            },
-          });
-
-          if (!session) {
-            io.to(sessionId).emit("interview:error", {
-              message: "user not found",
-            });
-            return;
-          }
-
-          if (!session.user.wallet) {
-            console.error("[credit deduction] wallet not found");
-            return;
-          }
-
-          const walletId = session.user.wallet.id;
-
-          await prisma.$transaction(async (tx) => {
-            await tx.wallet.update({
+        if (deductionExists) {
+          console.log(
+            `[credit deduction] already deducted for session=${sessionId}`
+          );
+        } else {
+          try {
+            const session = await prisma.session.findUnique({
               where: {
-                id: session?.user.wallet?.id,
+                id: sessionId,
               },
-              data: {
-                balance: {
-                  decrement: 1,
+              include: {
+                user: {
+                  include: { wallet: true },
                 },
+                mockInterview: true,
               },
             });
 
-            await tx.creditTransaction.create({
-              data: {
-                walletId,
-                type: "DEBIT",
-                amount: 1,
-                reason: "interview started",
-                sessionId,
-              },
+            if (!session) {
+              io.to(sessionId).emit("interview:error", {
+                message: "user not found",
+              });
+              return;
+            }
+
+            if (!session.user.wallet) {
+              console.error("[credit deduction] wallet not found");
+              return;
+            }
+
+            const walletId = session.user.wallet.id;
+
+            await prisma.$transaction(async (tx) => {
+              await tx.wallet.update({
+                where: {
+                  id: session?.user.wallet?.id,
+                },
+                data: {
+                  balance: {
+                    decrement: 1,
+                  },
+                },
+              });
+
+              await tx.creditTransaction.create({
+                data: {
+                  walletId,
+                  type: "DEBIT",
+                  amount: 1,
+                  reason: "interview started",
+                  sessionId,
+                },
+              });
+
+              await tx.mockInterview.update({
+                where: {
+                  id: session?.mockInterviewId,
+                },
+                data: {
+                  creditUsed: true,
+                },
+              });
             });
 
-            await tx.mockInterview.update({
-              where: {
-                id: session?.mockInterviewId,
-              },
-              data: {
-                creditUsed: true,
-              },
+            await redis.set(`credit:deducted:${sessionId}`, "true", {
+              EX: 86400,
             });
-          });
-
-          await redis.set(`credit:deducted:${sessionId}`, "true", {
-            EX: 86400,
-          });
-        } catch (error) {
-          console.error("[credit deduction error]", error);
+          } catch (error) {
+            console.error("[credit deduction error]", error);
+          }
         }
+      } catch (redisErr) {
+        console.warn(
+          `[sessionHandler] Redis unavailable for credit check, skipping deduction guard:`,
+          redisErr
+        );
+        // Don't crash — continue interview even if Redis is down
       }
 
       await prisma.session.update({
@@ -293,10 +303,7 @@ export function sessionHandler(io: Server, socket: Socket): void {
       if (status === "done") {
         console.log(`[sessionHandler] interview complete session=${sessionId}`);
 
-        const rawExpression = await redis.get(
-          `interview:expressions:${sessionId}`
-        );
-        const expressions = rawExpression ? JSON.parse(rawExpression) : [];
+        const expressions = getExpressions(sessionId);
 
         const result = {
           overallScore: graphState.values.overallScore as number,
@@ -315,7 +322,7 @@ export function sessionHandler(io: Server, socket: Socket): void {
             overallFeedback: result.overallFeedback,
             strengths: result.strengths,
             improvements: result.improvements,
-            expressions: result.expressions,
+            expressions: result.expressions as unknown as Prisma.InputJsonValue,
             screenshots: undefined,
           },
         });

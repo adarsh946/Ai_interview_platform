@@ -8,7 +8,6 @@ export const redis = createClient({
       return Math.min(retries * 100, 3000);
     },
     connectTimeout: 10000,
-    tls: true,
   } as any,
 });
 

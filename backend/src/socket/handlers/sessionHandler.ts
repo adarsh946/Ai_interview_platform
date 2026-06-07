@@ -450,10 +450,7 @@ export function sessionHandler(io: Server, socket: Socket): void {
 
       const result = await resultGeneratorNode(graphState.values as any);
 
-      const rawExpression = await redis.get(
-        `interview:expressions:${sessionId}`
-      );
-      const expressions = rawExpression ? JSON.parse(rawExpression) : [];
+      const expressions = getExpressions(sessionId);
 
       const finalResult = {
         overallScore: result.overallScore as number,
@@ -472,7 +469,8 @@ export function sessionHandler(io: Server, socket: Socket): void {
           overallFeedback: finalResult.overallFeedback,
           strengths: finalResult.strengths,
           improvements: finalResult.improvements,
-          expressions: finalResult.expressions,
+          expressions:
+            finalResult.expressions as unknown as Prisma.InputJsonValue,
           screenshots: undefined,
         },
       });

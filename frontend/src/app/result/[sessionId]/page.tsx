@@ -58,7 +58,7 @@ export default function Page({
       setIsLoading(true);
 
       try {
-        const results = await api.get(`/result/${sessionId}`);
+        const results = await api.get(`/session/result/${sessionId}`);
         if (!results) {
           setError("cannot found sessionId");
         }

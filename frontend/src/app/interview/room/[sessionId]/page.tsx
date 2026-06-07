@@ -228,23 +228,32 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     recognition.onstart = () => setIsMicActive(true);
 
     recognition.onend = () => {
-      // clear the silence timer if it still runing.
+      console.log(
+        "[recognition] onend fired, answer so far:",
+        currentAnswerRef.current
+      );
+      console.log(
+        "[recognition] serverStopped:",
+        serverStoppedRecognitionRef.current
+      );
+      console.log("[recognition] interviewEnded:", interviewEndedRef.current);
+
       if (silenceTimerRef.current) {
         clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = null;
       }
       setIsMicActive(false);
+
       if (serverStoppedRecognitionRef.current) {
-        serverStoppedRecognitionRef.current = false; // reset for next time
-        return; // server stopped it, don't submit again
+        serverStoppedRecognitionRef.current = false;
+        return;
       }
+
       if (interviewEndedRef.current) return;
 
-      // If we have answer text — submit it
       if (currentAnswerRef.current.trim()) {
         submitAnswer();
       } else {
-        // No answer yet — STT stopped unexpectedly, restart it
         console.log("[recognition] onend with no answer — restarting STT");
         setTimeout(() => {
           startListening();
@@ -253,10 +262,9 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     };
 
     recognition.onerror = (event: any) => {
-      console.error("[recognition] error:", event.error);
+      console.error("[recognition] onerror fired:", event.error);
       setIsMicActive(false);
 
-      // These errors are recoverable — restart listening
       const recoverableErrors = ["no-speech", "network", "audio-capture"];
 
       if (
@@ -267,7 +275,7 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
         console.log("[recognition] recoverable error — restarting STT");
         setTimeout(() => {
           startListening();
-        }, 500); // small delay before restarting
+        }, 500);
       }
     };
 
@@ -339,6 +347,10 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
 
       console.log(`[room] question #${questionNumber}: "${question}"`);
 
+      // Reset flags for fresh question
+      serverStoppedRecognitionRef.current = false;
+      currentAnswerRef.current = "";
+
       setCurrentQuestion(question);
       currentQuestionRef.current = question;
       setCurrentAnswer("");
@@ -360,6 +372,12 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     });
 
     socket.on("interview:status", (payload: StatusPayload) => {
+      console.log(
+        "[status] received:",
+        payload.status,
+        "serverStopped before:",
+        serverStoppedRecognitionRef.current
+      );
       if (payload.status === "processing") {
         setStatus("processing");
         serverStoppedRecognitionRef.current = true;

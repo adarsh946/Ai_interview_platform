@@ -14,6 +14,7 @@ export function buildQuestionGeneratorPrompt(
     followUpContext,
     currentQuestion,
     currentAnswer,
+    questionCount,
   } = state;
 
   //   Conversation history...
@@ -36,6 +37,12 @@ Reason: ${followUpContext}
 Last question asked: ${currentQuestion}
 Candidate's answer: ${currentAnswer}
 Ask a focused follow-up question that probes deeper into the above.`
+    : questionCount === 0
+    ? `This is the very start of the interview. 
+Begin with a warm, brief greeting — introduce yourself as the AI interviewer, 
+welcome the candidate, and then ask your first question naturally as part of the introduction.
+Keep the greeting to 1-2 sentences before the question.
+Pick a question relevant to the role and one of the skills being evaluated.`
     : `Ask a fresh question on a topic not yet covered in the conversation history above.
 Pick a topic relevant to the role and one of the skills being evaluated.`;
 

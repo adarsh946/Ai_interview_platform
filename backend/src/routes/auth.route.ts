@@ -16,12 +16,18 @@ route.get("/me", useMiddleware, getMeController);
 
 route.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  })
 );
 
 route.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", {
+    failureRedirect: "/login",
+    session: false,
+  }),
   (req, res) => {
     const user = req.user as { id: string };
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
@@ -29,9 +35,9 @@ route.get(
     });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false, // false for localhost
+      secure: false,
       sameSite: "lax",
-    }); // safer
+    });
     res.redirect(process.env.FRONTEND_URL + "/dashboard");
   }
 );
@@ -39,12 +45,15 @@ route.get(
 // GITHUB
 route.get(
   "/github",
-  passport.authenticate("github", { scope: ["user:email"] })
+  passport.authenticate("github", { scope: ["user:email"], session: false })
 );
 
 route.get(
   "/github/callback",
-  passport.authenticate("github", { failureRedirect: "/login" }),
+  passport.authenticate("github", {
+    failureRedirect: "/login?error=github_email_required",
+    session: false,
+  }),
   (req, res) => {
     const user = req.user as { id: string };
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {

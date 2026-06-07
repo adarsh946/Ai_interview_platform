@@ -2,7 +2,6 @@
 import { buildQuestionGeneratorPrompt } from "../prompt.js";
 import { InterviewStateType } from "../state.js";
 import { HumanMessage } from "@langchain/core/messages";
-// import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatGroq } from "@langchain/groq";
 
 /**

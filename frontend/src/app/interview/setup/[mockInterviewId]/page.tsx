@@ -425,8 +425,6 @@ function Page({ params }: { params: Promise<{ mockInterviewId: string }> }) {
             ))}
           </div>
         </div>
-        /* ── Start button ────────────────────────────────────────────────────
-        */
         {!mockInterview?.resumeText ? (
           <div className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-amber-50 border border-amber-200 rounded-2xl">
             <RefreshCw

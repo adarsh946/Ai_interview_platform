@@ -15,7 +15,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: process.env.BACKEND_URL + "/auth/google/callback",
+      callbackURL: process.env.BACKEND_URL + "/api/v1/auth/google/callback",
     },
     async (_accessToken, _refreshToken, profile: GoogleProfile, done) => {
       try {
@@ -60,7 +60,8 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-      callbackURL: process.env.BACKEND_URL + "/auth/github/callback",
+      callbackURL: process.env.BACKEND_URL + "/api/v1/auth/github/callback",
+      scope: ["user:email"],
     },
     async (
       _accessToken: string,
@@ -69,9 +70,15 @@ passport.use(
       done: VerifyCallback
     ) => {
       try {
-        const email = profile.emails?.[0].value;
+        const githubProfile = profile as any;
+        const email = profile.emails?.[0]?.value || githubProfile._json?.email;
         if (!email) {
-          return done(new Error("email not found"), undefined);
+          return done(
+            new Error(
+              "GitHub account has no accessible email. Please make your email public on GitHub or use Google login."
+            ),
+            undefined
+          );
         }
 
         let user = await prisma.user.findUnique({

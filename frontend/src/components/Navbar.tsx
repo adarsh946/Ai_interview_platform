@@ -36,9 +36,11 @@ const Navbar = () => {
             {link.tittle}
           </Link>
         ))}
-        <Button className="bg-[#10B981] hover:bg-emerald-400 cursor-pointer">
-          Get Started
-        </Button>
+        <Link href={"/register"}>
+          <Button className="bg-[#10B981] hover:bg-emerald-400 cursor-pointer">
+            Get Started
+          </Button>
+        </Link>
       </div>
     </div>
   );

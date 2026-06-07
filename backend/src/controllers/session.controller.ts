@@ -2,54 +2,29 @@ import prisma from "../prisma/prisma.js";
 
 export const startSession = async (req: any, res: any) => {
   const { mockInterviewId } = req.body;
+
   if (!mockInterviewId) {
-    return res.status(401).json({
-      message: "Invalid Session",
-    });
+    return res.status(400).json({ message: "mockInterviewId is required" });
   }
 
   try {
-    const findMockInterviewId = await prisma.session.findUnique({
-      where: {
-        mockInterviewId: mockInterviewId,
-      },
-    });
-
-    if (findMockInterviewId) {
-      return res.status(200).json({
-        message: "session started successfully!!",
-        sessionId: findMockInterviewId.id,
-        status: findMockInterviewId.status,
-      });
-    }
-
     const session = await prisma.session.create({
       data: {
         status: "PENDING",
         cameraTestPassed: false,
         micTestPassed: false,
-        mockInterview: {
-          connect: { id: mockInterviewId },
-        },
-        user: {
-          connect: { id: req.user.id },
-        },
+        mockInterview: { connect: { id: mockInterviewId } },
+        user: { connect: { id: req.user.id } },
       },
     });
 
-    if (!session) {
-      return res.status(401).json({
-        message: "Unable to Start the session",
-      });
-    }
-
     return res.status(200).json({
-      message: "session started successfully!!",
+      message: "Session started successfully",
       sessionId: session.id,
       status: session.status,
     });
   } catch (error) {
-    console.error(error);
+    console.error("[startSession] error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

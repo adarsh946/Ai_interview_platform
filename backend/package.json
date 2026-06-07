@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "postinstall": "prisma generate",
-    "build": "tsc",
+    "build": "tsc -b",
     "server": "tsc -b && node --env-file=.env dist/index.js",
-    "start": "node --env-file=.env dist/index.js",
+    "start": "node dist/index.js",
     "dev": "tsx --env-file=.env src/index.ts"
   },
   "prisma": {

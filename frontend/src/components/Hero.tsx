@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "./ui/button";
+import Link from "next/link";
 
 const Hero = () => {
   return (
@@ -17,9 +18,11 @@ const Hero = () => {
       </div>
       <div className="flex w-full mx-auto justify-center gap-6 mt-5">
         {" "}
-        <Button className="bg-[#10B981] hover:bg-emerald-400 cursor-pointer px-6">
-          Get Started
-        </Button>
+        <Link href={"/register"}>
+          <Button className="bg-[#10B981] hover:bg-emerald-400 cursor-pointer px-6">
+            Get Started
+          </Button>
+        </Link>
         <Button className="bg-transparent hover:bg-emerald-100 cursor-pointer text-slate-700 border border-emerald-500">
           Watch Demo
         </Button>

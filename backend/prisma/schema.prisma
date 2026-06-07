@@ -63,7 +63,7 @@ model MockInterview{
 
 model Session {
   id              String @id @default(uuid())
-  mockInterviewId String @unique
+  mockInterviewId String 
   mockInterview   MockInterview @relation(fields: [mockInterviewId], references: [id])
 
   user           User  @relation(fields: [userId], references: [id])

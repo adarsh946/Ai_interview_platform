@@ -97,7 +97,11 @@ export const signinController = async (req: any, res: any) => {
     if (!token)
       return res.status(401).json({ message: "problem in creating Token" });
 
-    res.cookie("token", token, { httpOnly: true, secure: true });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
     res.status(200).json({ message: "Signed in successfully" });
   } catch (error) {
     console.log(error);

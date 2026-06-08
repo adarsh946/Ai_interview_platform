@@ -35,8 +35,8 @@ route.get(
     });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
     res.redirect(process.env.FRONTEND_URL + "/dashboard");
   }
@@ -61,8 +61,8 @@ route.get(
     });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false, // false for localhost
-      sameSite: "lax",
+      secure: true, // false for localhost
+      sameSite: "none",
     });
     res.redirect(process.env.FRONTEND_URL + "/dashboard");
   }

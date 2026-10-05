@@ -64,12 +64,16 @@ app.use("/api/v1/mock", mockRoute);
 app.use("/api/v1/session", sessionRoute);
 app.use("/api/v1", paymentRoute);
 
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+  });
+});
+
 // socket.io connection...
 const httpServer = createServer(app);
-console.log("Step 4 - http server created");
 
 initializeSocket(httpServer);
-console.log("Step 5 - socket initialized");
 
 httpServer.listen(process.env.PORT || 8000, () => {
   console.log("Step 6 - Server running on port 8000");

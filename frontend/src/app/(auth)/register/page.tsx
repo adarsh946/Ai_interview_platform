@@ -246,10 +246,10 @@ function Page() {
           <p className="text-center text-sm text-slate-500 mt-6">
             Don&apos;t have an account?{" "}
             <Link
-              href="/register"
+              href="/login"
               className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors"
             >
-              Sign up
+              Log in
             </Link>
           </p>
         </div>

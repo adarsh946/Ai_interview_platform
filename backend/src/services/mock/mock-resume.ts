@@ -34,10 +34,17 @@ export const createMockService = async (req: any, res: any) => {
       });
     }
 
-    await resumeQueue.add("Process-resume", {
+    console.log("Adding resume job to queue:", {
       interviewId: interview.id,
       resumeUrl,
     });
+
+    const job = await resumeQueue.add("Process-resume", {
+      interviewId: interview.id,
+      resumeUrl,
+    });
+
+    console.log("Resume job added:", job.id);
 
     return {
       message: "Resume uploaded successfully.",

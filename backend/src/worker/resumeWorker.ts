@@ -8,6 +8,12 @@ import { s3 } from "../config/s3.js";
 console.log("worker - before worker creation");
 function startResumeWorker() {
   console.log("worker - inside function");
+
+  console.log("Redis config:", {
+    host: process.env.UPSTASH_REDIS_HOST,
+    port: process.env.UPSTASH_REDIS_PORT,
+  });
+
   const resumeWorker = new Worker(
     "resume-queue",
     async (job: Job) => {
@@ -48,6 +54,14 @@ function startResumeWorker() {
     },
     { connection: redisConnection }
   );
+
+  resumeWorker.on("ready", () => {
+    console.log("[resumeWorker] Redis connection ready");
+  });
+
+  resumeWorker.on("error", (err) => {
+    console.error("[resumeWorker] Worker error:", err);
+  });
 
   console.log("worker - worker created");
 

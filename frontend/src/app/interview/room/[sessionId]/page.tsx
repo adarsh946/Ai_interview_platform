@@ -98,11 +98,11 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
 
   // Then in your first useEffect:
   useEffect(() => {
-    // Prevent double execution
     if (interviewStartedRef.current) return;
     interviewStartedRef.current = true;
 
     const stored = sessionStorage.getItem("interviewPayload");
+
     console.log("[room] stored payload exists:", !!stored);
 
     if (!stored) {
@@ -111,22 +111,39 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     }
 
     const payload = JSON.parse(stored);
+
     console.log("[room] payload:", payload);
+
     sessionStorage.removeItem("interviewPayload");
 
-    console.log("[room] connecting socket...");
-
-    socket.connect();
-    console.log("[room] socket.connect() called");
-
-    socket.once("connect", () => {
-      console.log("[room] socket connected!");
+    const joinSession = () => {
       console.log("[room] emitting session:join for:", payload.sessionId);
-      socket.emit("session:join", { sessionId: payload.sessionId });
+
+      socket.emit("session:join", {
+        sessionId: payload.sessionId,
+      });
+    };
+
+    const handleConnect = () => {
+      console.log("[room] socket connected!");
+      joinSession();
+    };
+
+    console.log("[room] socket state:", {
+      connected: socket.connected,
+      id: socket.id,
     });
+
+    if (socket.connected) {
+      joinSession();
+    } else {
+      socket.once("connect", handleConnect);
+      socket.connect();
+    }
 
     socket.once("interview:status", (data) => {
       console.log("[room] interview:status received:", data);
+
       if (data.status === "joined") {
         console.log("[room] emitting interview:start");
         socket.emit("interview:start", payload);
@@ -140,8 +157,14 @@ function Page({ params }: { params: Promise<{ sessionId: string }> }) {
     socket.on("disconnect", (reason) => {
       console.log("[room] disconnected:", reason);
     });
-  }, []);
 
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("connect_error");
+      socket.off("disconnect");
+      socket.off("interview:status");
+    };
+  }, []);
   // ─── Auto scroll chat to bottom ───────────────────────────────────────────
 
   useEffect(() => {

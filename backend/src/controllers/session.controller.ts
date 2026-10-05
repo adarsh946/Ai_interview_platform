@@ -1,5 +1,34 @@
 import prisma from "../prisma/prisma.js";
 
+// export const startSession = async (req: any, res: any) => {
+//   const { mockInterviewId } = req.body;
+
+//   if (!mockInterviewId) {
+//     return res.status(400).json({ message: "mockInterviewId is required" });
+//   }
+
+//   try {
+//     const session = await prisma.session.create({
+//       data: {
+//         status: "PENDING",
+//         cameraTestPassed: false,
+//         micTestPassed: false,
+//         mockInterview: { connect: { id: mockInterviewId } },
+//         user: { connect: { id: req.user.id } },
+//       },
+//     });
+
+//     return res.status(200).json({
+//       message: "Session started successfully",
+//       sessionId: session.id,
+//       status: session.status,
+//     });
+//   } catch (error) {
+//     console.error("[startSession] error:", error);
+//     return res.status(500).json({ error: "Internal server error" });
+//   }
+// };
+
 export const startSession = async (req: any, res: any) => {
   const { mockInterviewId } = req.body;
 
@@ -8,6 +37,21 @@ export const startSession = async (req: any, res: any) => {
   }
 
   try {
+    // Check if session already exists for this interview
+    const existingSession = await prisma.session.findUnique({
+      where: { mockInterviewId },
+    });
+
+    if (existingSession) {
+      // Return existing session instead of creating new one
+      return res.status(200).json({
+        message: "Session already exists",
+        sessionId: existingSession.id,
+        status: existingSession.status,
+      });
+    }
+
+    // Create new session
     const session = await prisma.session.create({
       data: {
         status: "PENDING",
